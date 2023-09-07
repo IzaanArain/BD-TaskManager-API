@@ -1,0 +1,78 @@
+const mongoose=require("mongoose");
+
+
+const UserSchema=new mongoose.Schema({
+    name:{
+        type:String,
+        default:"",
+    },
+    email:{
+        type:String,
+        required:true,
+        unique:true,
+    },
+    password:{
+        type:String,
+        required:true,
+    },
+    phone:{
+        type:String,
+        default:"",
+    },
+    status:{
+        type:Boolean,
+        default:false
+    },
+    isBlocked:{
+        type:Boolean,
+        default:false
+    },
+    userAuth:{
+        type:String,
+        default:"",
+    },
+    isVerified:{
+        type:Boolean,
+        default:false
+    },
+    isForgetPassword:{
+        type:Boolean,
+        default:false
+    },
+    isComplete:{
+        type:Boolean,
+        default:false,
+    },
+    is_notification:{
+        type:Boolean,
+        default:false
+    },
+    status:{
+        type:Boolean,
+        default:true
+    },
+    device_token:{
+        type:String,
+        default:""
+    },
+    device:{
+        type:String,
+        default:""
+    },
+    social_token:{
+        type:String,
+        default:""
+    },
+    isDelete:{
+        type:Boolean,
+        default:false
+    },
+    code:{
+        type:String,
+        default:""
+    }
+},{
+    timestamps:true
+});
+
+module.exports=mongoose.model("User",UserSchema);

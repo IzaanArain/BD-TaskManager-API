@@ -285,22 +285,19 @@ const loginUser = async (req, res) => {
         message: "please enter email",
         status: 0,
       });
-    }
-    if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    }else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       console.error("Error", "not a valid Email".red);
       return res.status(404).send({
         message: "not a valid Email",
         status: 0,
       });
-    }
-    if (!password) {
+    }else if (!password) {
       console.error("Error", "please enter password".red);
       return res.status(404).send({
         message: "please enter password",
         status: 0,
       });
-    }
-    if (
+    }else if (
       !password.match(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
       )
@@ -311,6 +308,7 @@ const loginUser = async (req, res) => {
         status: 0,
       });
     }
+
     const user = await Users.findOne({ email });
 
     if (!user) {
@@ -360,6 +358,60 @@ const loginUser = async (req, res) => {
   }
 };
 
+//@desc forgot password
+//@route POST /api/v1/users/forget_password
+//@access Public
+const forget_password=async(req,res)=>{
+  try{
+    const {email:typed_email}=req.body;
+    if(!typed_email){
+      console.error("Error","please enter email");
+      return res.status(404).send({
+        status:1,
+        message:"please enter email"
+      }) 
+    }else if (!typed_email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      console.error("Error", "not a valid Email".red);
+      return res.status(404).send({
+        message: "not a valid Email",
+        status: 0,
+      });
+    }
+
+    const userExists=await Users.findOne({email:typed_email})
+    if(!userExists){
+      console.error("Error", "user does not exist".red);
+      return res.status(404).send({
+        message: "user does not exist",
+        status: 0,
+      });
+    }
+
+     // OTP code
+     const otp_code = Math.floor(Math.random() * 900000) + 100000;
+
+     const user=await Users.findOneAndUpdate(
+      {email:typed_email},
+      {code:otp_code},
+      {new:true});
+      
+      const {code,email}=user;
+     res.status(200).send({
+      status:1,
+      message:"OTP successfully generated",
+      code,
+      email
+     })
+
+  }catch(err){
+    console.error("Error",err.message.red)
+    console.error("msg","Something went wrong")
+    return res.status(500).send({
+      status:0,
+      message:"Something went wrong"
+    })
+  }
+}
 //@desc update a user
 //@route PUT /api/v1/users/create
 //@access Private
@@ -476,6 +528,7 @@ module.exports = {
   otp_verify,
   loginUser,
   Complete_profile,
+  forget_password,
   getAllUsers,
   getUser,
   updateUser,

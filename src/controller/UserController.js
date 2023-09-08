@@ -412,6 +412,18 @@ const forget_password=async(req,res)=>{
     })
   }
 }
+
+//@desc reset password
+//@route PUT /api/v1/users/create
+//@access Private
+const reset_password=()=>{
+  try{
+
+  }catch(err){
+    console.error("Error",err.message.red)
+  }
+}
+
 //@desc update a user
 //@route PUT /api/v1/users/create
 //@access Private

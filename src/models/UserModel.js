@@ -19,6 +19,14 @@ const UserSchema=new mongoose.Schema({
         type:String,
         default:"",
     },
+    code:{
+        type:Number,
+        default:""
+    },
+    image:{
+        type:String,
+        default:""
+    },
     status:{
         type:Boolean,
         default:false
@@ -67,10 +75,6 @@ const UserSchema=new mongoose.Schema({
         type:Boolean,
         default:false
     },
-    code:{
-        type:String,
-        default:""
-    }
 },{
     timestamps:true
 });

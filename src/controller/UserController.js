@@ -34,7 +34,7 @@ const getAllUsers = async (req, res) => {
     const user = await Users.find({}).sort({ createdAt: -1 });
     // res.status(200).send(user);
     const userMap = user.map(
-      ({name, email, phone, createdAt, updatedAt }) => ({
+      ({ name, email, phone, createdAt, updatedAt }) => ({
         name,
         email,
         phone,
@@ -55,7 +55,7 @@ const getAllUsers = async (req, res) => {
 //@access Private
 const getUser = async (req, res) => {
   // const { id } = req.params;
-  const {id}=req;
+  const { id } = req;
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(404);
@@ -86,90 +86,189 @@ const getUser = async (req, res) => {
 //@desc add a user
 //@route POST /api/v1/users/create
 //@access public
+
 const addUser = async (req, res) => {
-  const { email, password} = req.body;
-  console.log(email,password)
   try {
-     if (!email) {
-      console.error("Error:","please enter your email".red)
+    const { email: typed_email, password: typed_password } = req.body;
+    if (!typed_email) {
+      console.error("Error:", "please enter your email".red);
       return res.status(404).send({
-        status:0,
-        message:"please enter your email"
-      })
-    }else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+        status: 0,
+        message: "please enter your email",
+      });
+    } else if (!typed_email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       return res.status(404).send({
-        status:0,
-        message:"Please enter a valid email"
-      })
-    }else if (!password) {
+        status: 0,
+        message: "Please enter a valid email",
+      });
+    } else if (!typed_password) {
       return res.status(404).send({
-        status:0,
-        message:"please enter your pasword"
-      })
-    }else if (!password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)) 
-      {
+        status: 0,
+        message: "please enter your pasword",
+      });
+    } else if (
+      !typed_password.match(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+      )
+    ) {
       return res.status(404).send({
-        status:0,
-        message: "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character."
-      })
+        status: 0,
+        message:
+          "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character.",
+      });
     }
     //check if user exists
-    const userExists = await Users.findOne({ email });
+    const userExists = await Users.findOne({ email: typed_email });
     if (userExists) {
       return res.status(404).send({
-        status:0,
-        message:"user email is already registered, use another email"
-      })
+        status: 0,
+        message: "user email is already registered, use another email",
+      });
     }
     // hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(typed_password, salt);
 
-    //user is created in db
-    const user = await Users.create({ 
-      email,
+    // OTP code
+    const otp_code = Math.floor(Math.random() * 900000) + 100000;
+    // user is created in db
+    const user = await Users.create({
+      email: typed_email,
       password: hashedPassword,
+      code: otp_code,
     });
 
+    const { code, email } = user;
     return res.status(200).send({
       status: 1,
-      message: "user created successfully",
-      user,
+      message: "user OTP created successfully",
+      data: { code, email },
     });
   } catch (err) {
-    console.error("User not created")
-    console.log("Error:",err.message)
+    console.error("User OTP not created");
+    console.log("Error:", err.message);
     return res.status(500).send({
       status: 0,
-      message: "User not created"
+      message: "User OTP not generated",
     });
   }
 };
 
-//@desc add a user
-//@route POST /api/v1/users/create
-//@access public
+//@desc OTP verification
+//@route POST /api/v1/users/otp_verify
+//@access private
 const otp_verify = async (req, res) => {
   try {
-    
+    console.log(req.files)
+    const { code:otp_code } = req.body;
+    const lowest = 100000;
+    const highest = 999999;
+    if (!otp_code) {
+      return res.status(404).send({
+        status: 0,
+        message: "please enter OTP code",
+      });
+    } else if (otp_code < lowest) {
+      console.error(
+        "Error",
+        "OTP code must have six digits, cannot be lower than six digits".red
+      );
+      return res.status(404).send({
+        status: 0,
+        message:
+          "OTP code must have six digits,cannot be lower than six digits",
+      });
+    } else if (otp_code > highest) {
+      console.error(
+        "Error",
+        "OTP code must have six digits, cannot be higher than six digits".red
+      );
+      return res.status(404).send({
+        status: 0,
+        message:
+          "OTP code must have six digits,cannot be higher than six digits",
+      });
+    }
+
+    const user = await Users.findOne({ code: otp_code });
+    if (!user) {
+      console.error("Error", "user does not exist".red);
+      return res.status(404).send({
+        status: 0,
+        message: "user does not exist",
+      });
+    }
+    const { code, email } = user;
+    res.status(200).send({
+      status: 1,
+      message: "user OTP successfully verified",
+      data: { code, email },
+    });
   } catch (err) {
+    console.error("Error", `${err.message}`.red);
+    console.error("msg","Not a valid OTP code".red);
     return res.status(500).send({
       status: 0,
-      message: "User not created"
+      message: "Not a valid OTP code",
     });
   }
 };
 
-//@desc add a user
-//@route POST /api/v1/users/create
-//@access public
+//@desc complete profile
+//@route POST /api/v1/users/complete_profile
+//@access private
 const Complete_profile = async (req, res) => {
   try {
-    
+    const {name,phone,email}=req.body
+    if(!name){
+      console.error("Error","Must have a user Name".red)
+      return res.status(400).send({
+        status:0,
+        message:"Must have a user Name"
+      });
+    }else if(name.length>50){
+      console.error("Error","Name can not be more th 50 character".red)
+      return res.status(400).send({
+        status:0,
+        message:"Name can not be more th 50 character"
+      });
+    }else if (!phone){
+      console.error("Error","must have phone a number".red)
+      return res.status(400).send({
+        status:0,
+        message:"must have phone a number"
+      });
+    }else if(!phone.match(/^[0-9]{11}$/)) {
+      console.error("Error","Phone number must have 11 digits".red)
+      return res.status(400).send({
+        status:0,
+        message:"Phone number must have 11 digits"
+      });
+    }
+
+    const userExists=await Users.findOne({email})
+    if(!userExists){
+      console.error("Error","user does not exist".red)
+      return res.status(400).send({
+        status:0,
+        message:"user does not exist"
+      });
+    }
+    const image=req?.file?.path?.replace(/\\/g,"/");
+    const user=await Users.findOneAndUpdate(
+      {email},
+      {name,phone,image:image},
+      {new:true}
+    )
+    res.status(200).send({
+      status: 1,
+      message: "Profile Completed Successfully",
+      user
+    })
   } catch (err) {
     return res.status(500).send({
       status: 0,
-      message: "User not created"
+      message: "Profile Not complete",
     });
   }
 };
@@ -181,50 +280,53 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
     if (!email) {
-      console.error("Error","please enter email".red);
+      console.error("Error", "please enter email".red);
       return res.status(404).send({
-        message:"please enter email",
-        status:0
-      })
+        message: "please enter email",
+        status: 0,
+      });
     }
     if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      console.error("Error","not a valid Email".red);
+      console.error("Error", "not a valid Email".red);
       return res.status(404).send({
-        message:"not a valid Email",
-        status:0
-      })
+        message: "not a valid Email",
+        status: 0,
+      });
     }
     if (!password) {
-      console.error("Error","please enter password".red);
+      console.error("Error", "please enter password".red);
       return res.status(404).send({
-        message:"please enter password",
-        status:0
-      })
+        message: "please enter password",
+        status: 0,
+      });
     }
     if (
-      !password.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)) {
-      console.error("Error","not a valid password".red);
+      !password.match(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+      )
+    ) {
+      console.error("Error", "not a valid password".red);
       return res.status(400).send({
-        message:"not a valid password",
-        status:0
-      })
+        message: "not a valid password",
+        status: 0,
+      });
     }
     const user = await Users.findOne({ email });
 
     if (!user) {
       return res.status(400).send({
-        message:"user does not exist",
-        status:0
-      })
+        message: "user does not exist",
+        status: 0,
+      });
     }
 
     //compare password with hashed password
     const matchPassword = await bcrypt.compare(password, user.password);
     if (!matchPassword) {
       return res.status(400).send({
-        message:"Incorrect password",
-        status:0
-      })
+        message: "Incorrect password",
+        status: 0,
+      });
     }
     //create token
     const token = createToken(user?._id);
@@ -234,37 +336,37 @@ const loginUser = async (req, res) => {
       { _id: user?._id?.toString() },
       { userAuth: token },
       { new: true }
-    );
+    ).select("-password"); // removes password or any other key 
 
     if (user) {
-      const { password, ...others } = save_token._doc
       res.status(200).send({
         message: "login successful",
         status: 1,
-        user: others
+        user: save_token,
       });
     } else {
       res.send({
         message: "Login failed",
-        status:0,
+        status: 0,
       });
     }
   } catch (err) {
     console.error("Error", `${err.message}`.red);
-    res.status(500).send({ 
-      status:0,
-      message:"Something went wrong",
-      Error: err.message });
+    res.status(500).send({
+      status: 0,
+      message: "Something went wrong",
+      Error: err.message,
+    });
   }
 };
 
 //@desc update a user
 //@route PUT /api/v1/users/create
 //@access Private
-// Do not update email and password 
+// Do not update email and password
 const updateUser = async (req, res) => {
   // const {id}=req.params;
-  const {name,email,password,phone}=req.body
+  const { name, email, password, phone } = req.body;
   const { id } = req;
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -277,9 +379,9 @@ const updateUser = async (req, res) => {
       // res.status(404);
       // throw new Error("User not found");
       return res.status(404).send({
-        status:1,
-        message:'user not found',
-      })
+        status: 1,
+        message: "user not found",
+      });
     }
     if (user?._id.toString() !== id.toString()) {
       res.status(403);
@@ -319,12 +421,12 @@ const updateUser = async (req, res) => {
     }
 
     // console.log("p: ",password)
-    const salt=await bcrypt.genSalt(10)
-    const hashedPassword=await bcrypt.hash(password,salt)
-    // console.log("h: ",hashedPassword)    
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    // console.log("h: ",hashedPassword)
     const updateUser = await Users.findByIdAndUpdate(
       { _id: id },
-      { ...req.body,password:hashedPassword },
+      { ...req.body, password: hashedPassword },
       { new: true }
     );
 
@@ -356,7 +458,6 @@ const deleteUser = async (req, res) => {
       res.status(404);
       throw new Error("User not found");
     }
-   
 
     await Users.deleteOne({ _id: id });
     // res.status(200).send({ message: `deleted user sucessfully at ID:${id}`,user:deleteUser });

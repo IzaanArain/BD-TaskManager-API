@@ -7,10 +7,10 @@ const cors = require("cors");
 
 const app = express();
 //middleware
-// app.use((req, res, next) => {
-//   console.log(`${req.method} ${req.hostname}${req.path}`.italic);
-//   next();
-// });
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.hostname}${req.path}`.italic);
+  next();
+});
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -21,7 +21,7 @@ Connect().then(() => {
   app.listen(PORT, () => {
     // console.log(`Running Server on http://localhost:${PORT}/`.bold);
     console.log(
-      `Running Server on :${PORT}`.yellow
+      `Running Server on Port:${PORT}`.yellow
     );
   });
 });

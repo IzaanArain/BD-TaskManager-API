@@ -8,7 +8,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "author": "",
+  "author": "Izaan saqib",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.0.0",
     "mongoose": "^7.5.0",
+    "multer": "^1.4.5-lts.1",
     "nodemon": "^3.0.1"
   }
 }

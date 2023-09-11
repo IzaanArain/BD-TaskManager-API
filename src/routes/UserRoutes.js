@@ -11,7 +11,9 @@ const {
   forget_password,
   reset_password,
   notification,
-  block_user
+  block_user,
+  unblock_user,
+  change_password
 } = require("../controller/UserController");
 const user_token_auth = require("../middleware/Auth");
 const file=require("../middleware/Multer")
@@ -26,9 +28,11 @@ router.post("/forgot_password",file.user,forget_password);
 router.post("/reset_password",file.user,reset_password);
 router.post("/notification",user_token_auth,notification);
 router.post("/block_user/:id",file.user,block_user);
+router.post("/unblock_user/:id",file.user,unblock_user);
+router.post("/change_password",user_token_auth,file.user,change_password);
 router.get("/allusers", user_token_auth, getAllUsers);
 router.get("/", user_token_auth, getUser);
 router.put("/update", user_token_auth, updateUser);
-router.delete("/delete", user_token_auth, deleteUser);
+router.delete("/delete/:id", user_token_auth, deleteUser);
 
 module.exports = router;

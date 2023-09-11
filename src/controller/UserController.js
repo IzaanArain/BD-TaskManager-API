@@ -10,7 +10,6 @@ const createToken = (_id) => {
 
 //@desc get all user
 //@route GET /api/v1/users/
-//@access Private
 const getAllUsers = async (req, res) => {
   const { id } = req;
   try {
@@ -52,7 +51,6 @@ const getAllUsers = async (req, res) => {
 
 //@desc get a user
 //@route GET /api/v1/users/:id
-//@access Private
 const getUser = async (req, res) => {
   // const { id } = req.params;
   const { id } = req;
@@ -85,8 +83,6 @@ const getUser = async (req, res) => {
 
 //@desc add a user
 //@route POST /api/v1/users/create
-//@access public
-
 const addUser = async (req, res) => {
   try {
     const {
@@ -120,6 +116,7 @@ const addUser = async (req, res) => {
           "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character.",
       });
     }
+   
     //check if user exists
     const userExists = await Users.findOne({ email: typed_email });
     if (userExists) {
@@ -128,26 +125,28 @@ const addUser = async (req, res) => {
         message: "user email is already registered, use another email",
       });
     }
-    // hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(typed_password, salt);
+   
+       // hash password
+       const salt = await bcrypt.genSalt(10);
+       const hashedPassword = await bcrypt.hash(typed_password, salt);
 
-    // OTP code
-    const otp_code = Math.floor(Math.random() * 900000) + 100000;
-    // user is created in db
-    const user = await Users.create({
-      email: typed_email,
-      password: hashedPassword,
-      role: set_role,
-      code: otp_code,
-    });
+       // OTP code
+       const otp_code = Math.floor(Math.random() * 900000) + 100000;
+       // user is created in db
+       const user = await Users.create({
+         email: typed_email,
+         password: hashedPassword,
+         role: set_role,
+         code: otp_code,
+       });
 
-    const { code, email, role } = user;
-    return res.status(200).send({
-      status: 1,
-      message: "user OTP created successfully",
-      data: { code, email, role },
-    });
+       const { code, email, role } = user;
+       return res.status(200).send({
+         status: 1,
+         message: "user OTP created successfully",
+         data: { code, email, role },
+       });
+   
   } catch (err) {
     return res.status(500).send({
       status: 0,
@@ -158,7 +157,6 @@ const addUser = async (req, res) => {
 
 //@desc OTP verification
 //@route POST /api/v1/users/otp_verify
-//@access private
 const otp_verify = async (req, res) => {
   try {
     const { code: otp_code } = req.body;
@@ -219,38 +217,33 @@ const otp_verify = async (req, res) => {
 
 //@desc complete profile
 //@route POST /api/v1/users/complete_profile
-//@access private
 const Complete_profile = async (req, res) => {
   try {
     const { name, phone, email } = req.body;
     if (!name) {
-     
       return res.status(400).send({
         status: 0,
         message: "Must have a user Name",
       });
     } else if (name.length > 50) {
-      
       return res.status(400).send({
         status: 0,
         message: "Name can not be more th 50 character",
       });
     } else if (!phone) {
-      
       return res.status(400).send({
         status: 0,
         message: "must have phone a number",
       });
     } else if (!phone.match(/^[0-9]{11}$/)) {
-     
       return res.status(400).send({
         status: 0,
         message: "Phone number must have 11 digits",
       });
     }
 
-    const userVerified = await Users.findOne({ email,isVerified:true });
-    if (userVerified){
+    const userVerified = await Users.findOne({ email, isVerified: true });
+    if (userVerified) {
       const image = req?.file?.path?.replace(/\\/g, "/");
       const user = await Users.findOneAndUpdate(
         { email },
@@ -286,7 +279,6 @@ const Complete_profile = async (req, res) => {
 
 //@desc login a user
 //@route POST /api/v1/users/login
-//@access Private
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -371,7 +363,6 @@ const loginUser = async (req, res) => {
 
 //@desc forgot password
 //@route POST /api/v1/users/forget_password
-//@access Public
 const forget_password = async (req, res) => {
   try {
     const { email: typed_email } = req.body;
@@ -422,10 +413,9 @@ const forget_password = async (req, res) => {
 
 //@desc reset password
 //@route PUT /api/v1/users/create
-//@access Private
 const reset_password = async (req, res) => {
   try {
-    const { email,password: new_password } = req.body;
+    const { email, password: new_password } = req.body;
 
     if (!new_password) {
       return res.status(404).send({
@@ -443,30 +433,34 @@ const reset_password = async (req, res) => {
       });
     }
 
-    const user_verified = await Users.findOne({ email,isForgetPassword:true,isVerified:true });
+    const user_verified = await Users.findOne({
+      email,
+      isForgetPassword: true,
+      isVerified: true,
+    });
     if (!user_verified) {
       return res.status(404).send({
         message: "user not verified",
         status: 0,
       });
-    } 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(new_password, salt);
-      const user_update = await Users.findOneAndUpdate(
-        { email: typed_email },
-        {
-          password: hashedPassword,
-          isForgetPassword: false,
-          isVerified: false,
-        },
-        { new: true }
-      );
-      const user_email = user_update.email;
-      res.status(200).send({
-        status: 1,
-        message: "password successfully reset",
-        email: user_email,
-      });
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+    const user_update = await Users.findOneAndUpdate(
+      { email: typed_email },
+      {
+        password: hashedPassword,
+        isForgetPassword: false,
+        isVerified: false,
+      },
+      { new: true }
+    );
+    const user_email = user_update.email;
+    res.status(200).send({
+      status: 1,
+      message: "password successfully reset",
+      email: user_email,
+    });
   } catch (err) {
     res.status(500).send({
       status: 0,
@@ -476,22 +470,28 @@ const reset_password = async (req, res) => {
 };
 
 const notification = async (req, res) => {
-  const id = req.id;
   try {
+    const id = req.id;
+    const { device_token, device, social_token, social_type } = req.body;
     if (id) {
       const user = await Users.findOneAndUpdate(
         { _id: id },
-        { is_notification: true },
+        {
+          is_notification: true,
+          device_token,
+          device,
+          social_token,
+          social_type,
+        },
         { new: true }
       );
-      const {is_notification}=user
+      const { is_notification } = user;
       res.status(200).send({
         status: 1,
         Message: "Notification is enabled",
         is_notification,
       });
     } else {
-      console.log("msg", "Notification is disabled".red);
       res.status(400).send({
         status: 0,
         message: "Notification is disabled",
@@ -508,8 +508,8 @@ const notification = async (req, res) => {
 const block_user = async (req, res) => {
   try {
     const user_id = req.params.id;
-    const email = req.body.email;
-    const adminUser = await Users.findOne({ email, role: "admin" });
+    const adminId = req.id;
+    const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
     if (!adminUser) {
       return res.status(404).send({
         message: "you are not Admin",
@@ -521,7 +521,7 @@ const block_user = async (req, res) => {
       { isBlocked: true },
       { new: true }
     );
-    const { email:user_email, isBlocked } = user;
+    const { email: user_email, isBlocked } = user;
 
     return res.status(200).send({
       status: 1,
@@ -536,12 +536,79 @@ const block_user = async (req, res) => {
   }
 };
 
-const unblock_user=async(req,res)=>{
-  
-}
+const unblock_user = async (req, res) => {
+  try {
+    const user_id = req.params.id; // user id
+    const adminId = req.id;
+    const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
+    if (!adminUser) {
+      return res.status(404).send({
+        message: "you are not Admin",
+        status: 0,
+      });
+    }
+    const user = await Users.findOneAndUpdate(
+      { _id: user_id },
+      { isBlocked: false },
+      { new: true }
+    );
+    const { email: user_email, isBlocked } = user;
+
+    return res.status(200).send({
+      status: 1,
+      message: `${user_email} has been blocked`,
+      isBlocked,
+    });
+  } catch (err) {
+    return res.status(500).send({
+      message: "something went wrong",
+      status: 0,
+    });
+  }
+};
+const change_password = async (req, res) => {
+  try {
+    const id = req.id;
+    const { password: new_password } = req.body;
+    if (!new_password) {
+      return res.status(404).send({
+        message: "please enter password",
+        status: 0,
+      });
+    } else if (
+      !new_password.match(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+      )
+    ) {
+      return res.status(400).send({
+        message: "not a valid password",
+        status: 0,
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(new_password, salt);
+    const user = await Users.findOneAndUpdate(
+      { _id: id },
+      { password: hashedPassword },
+      { new: true }
+    );
+
+    res.status(200).send({
+      status: 1,
+      message: "password changed successfully",
+      user,
+    });
+  } catch (err) {
+    return res.status(500).send({
+      message: "something went wrong",
+      status: 0,
+    });
+  }
+};
+
 //@desc update a user
 //@route PUT /api/v1/users/create
-//@access Private
 // Do not update email and password
 const updateUser = async (req, res) => {
   // const {id}=req.params;
@@ -622,31 +689,49 @@ const updateUser = async (req, res) => {
 
 //@desc delete a user
 //@route DELETE /api/v1/users/delete
-//@access Private
 const deleteUser = async (req, res) => {
-  // const { id } = req.params;
-  const { id } = req;
   try {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(404);
-      throw new Error("invalid user id, no such user exists");
-    }
+    const adminId = req.id;
+    const userId = req.params.id;
 
-    const user = await Users.findById(id);
-    if (!user) {
-      res.status(404);
-      throw new Error("User not found");
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(404).send({
+        status: 0,
+        message: "invalid user id, no such user exists",
+      });
     }
+    const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
+    if (adminUser) {
+      const userUpdated = await Users.findOneAndUpdate(
+        { _id: userId },
+        { isDelete: true },
+        { new: true }
+      );
 
-    await Users.deleteOne({ _id: id });
-    // res.status(200).send({ message: `deleted user sucessfully at ID:${id}`,user:deleteUser });
-    return res.status(200).send({
-      status: 1,
-      message: `deleted user sucessfully at ID:${id}`,
-    });
+      if (!userUpdated) {
+        return res.status(404).send({
+          status: 0,
+          message: "user not found",
+        });
+      }
+
+      const { email, isDelete } = userUpdated;
+      return res.status(200).send({
+        status: 1,
+        message: `deleted user sucessfully ${email}`,
+        isDelete,
+      });
+    } else {
+      return res.status(400).send({
+        message: "you are not admin",
+        status: 0,
+      });
+    }
   } catch (err) {
-    console.error("Error", `${err}`.red);
-    res.send({ Error: err.message });
+    return res.status(500).send({
+      message: "something went wrong",
+      status: 0,
+    });
   }
 };
 
@@ -659,6 +744,8 @@ module.exports = {
   reset_password,
   notification,
   block_user,
+  unblock_user,
+  change_password,
   getAllUsers,
   getUser,
   updateUser,

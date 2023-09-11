@@ -90,6 +90,8 @@ const addUser = async (req, res) => {
       password: typed_password,
       role: set_role,
     } = req.body;
+
+    const allRoles=["admin","user"]
     if (!typed_email) {
       return res.status(404).send({
         status: 0,
@@ -116,7 +118,20 @@ const addUser = async (req, res) => {
           "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character.",
       });
     }
-   
+
+    if(!set_role){
+      return res.status(404).send({
+        status: 0,
+        message:"must have a role"
+      });
+    }
+    const rol=set_role.toLowerCase()
+    if(!allRoles.includes(rol)){
+      return res.status(404).send({
+        status: 0,
+        message:"Invalid role"
+      });
+    }
     //check if user exists
     const userExists = await Users.findOne({ email: typed_email });
     if (userExists) {
@@ -136,7 +151,7 @@ const addUser = async (req, res) => {
        const user = await Users.create({
          email: typed_email,
          password: hashedPassword,
-         role: set_role,
+         role: rol,
          code: otp_code,
        });
 
@@ -159,7 +174,7 @@ const addUser = async (req, res) => {
 //@route POST /api/v1/users/otp_verify
 const otp_verify = async (req, res) => {
   try {
-    const { code: otp_code } = req.body;
+    const { code: otp_code,email:typed_email } = req.body;
     const lowest = 100000;
     const highest = 999999;
     if (!otp_code) {
@@ -189,11 +204,7 @@ const otp_verify = async (req, res) => {
       });
     }
 
-    const user = await Users.findOneAndUpdate(
-      { code: otp_code },
-      { isVerified: true },
-      { new: true }
-    );
+    const user = await Users.findOne({ code: otp_code },);
     if (!user) {
       return res.status(404).send({
         status: 0,

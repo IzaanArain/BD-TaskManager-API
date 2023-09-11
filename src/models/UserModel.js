@@ -4,7 +4,7 @@ const mongoose=require("mongoose");
 const UserSchema=new mongoose.Schema({
     name:{
         type:String,
-        default:"",
+        require:true
     },
     email:{
         type:String,
@@ -19,6 +19,12 @@ const UserSchema=new mongoose.Schema({
         type:String,
         default:"",
     },
+    role:{
+        type:String,
+        enum:["user","admin"],
+        default:"user",
+        require:true,
+    },
     code:{
         type:Number,
         default:""
@@ -26,10 +32,6 @@ const UserSchema=new mongoose.Schema({
     image:{
         type:String,
         default:""
-    },
-    status:{
-        type:Boolean,
-        default:false
     },
     isBlocked:{
         type:Boolean,
@@ -55,21 +57,21 @@ const UserSchema=new mongoose.Schema({
         type:Boolean,
         default:false
     },
-    status:{
-        type:Boolean,
-        default:true
-    },
     device_token:{
         type:String,
-        default:""
+        default:"123456789"
     },
     device:{
         type:String,
-        default:""
+        default:"Android"
     },
     social_token:{
         type:String,
-        default:""
+        default:"987654321"
+    },
+    social_type:{
+        type:String,
+        default:"facebook"
     },
     isDelete:{
         type:Boolean,

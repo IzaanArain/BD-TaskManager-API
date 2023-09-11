@@ -89,9 +89,12 @@ const getUser = async (req, res) => {
 
 const addUser = async (req, res) => {
   try {
-    const { email: typed_email, password: typed_password } = req.body;
+    const {
+      email: typed_email,
+      password: typed_password,
+      role: set_role,
+    } = req.body;
     if (!typed_email) {
-      console.error("Error:", "please enter your email".red);
       return res.status(404).send({
         status: 0,
         message: "please enter your email",
@@ -135,18 +138,17 @@ const addUser = async (req, res) => {
     const user = await Users.create({
       email: typed_email,
       password: hashedPassword,
+      role: set_role,
       code: otp_code,
     });
 
-    const { code, email } = user;
+    const { code, email, role } = user;
     return res.status(200).send({
       status: 1,
       message: "user OTP created successfully",
-      data: { code, email },
+      data: { code, email, role },
     });
   } catch (err) {
-    console.error("User OTP not created");
-    console.log("Error:", err.message);
     return res.status(500).send({
       status: 0,
       message: "User OTP not generated",
@@ -159,8 +161,7 @@ const addUser = async (req, res) => {
 //@access private
 const otp_verify = async (req, res) => {
   try {
-    console.log(req.files)
-    const { code:otp_code } = req.body;
+    const { code: otp_code } = req.body;
     const lowest = 100000;
     const highest = 999999;
     if (!otp_code) {
@@ -190,23 +191,25 @@ const otp_verify = async (req, res) => {
       });
     }
 
-    const user = await Users.findOne({ code: otp_code });
+    const user = await Users.findOneAndUpdate(
+      { code: otp_code },
+      { isVerified: true },
+      { new: true }
+    );
     if (!user) {
-      console.error("Error", "user does not exist".red);
       return res.status(404).send({
         status: 0,
         message: "user does not exist",
       });
     }
-    const { code, email } = user;
+
+    const { code, email, isVerified } = user;
     res.status(200).send({
       status: 1,
       message: "user OTP successfully verified",
-      data: { code, email },
+      data: { code, email, isVerified },
     });
   } catch (err) {
-    console.error("Error", `${err.message}`.red);
-    console.error("msg","Not a valid OTP code".red);
     return res.status(500).send({
       status: 0,
       message: "Not a valid OTP code",
@@ -219,56 +222,64 @@ const otp_verify = async (req, res) => {
 //@access private
 const Complete_profile = async (req, res) => {
   try {
-    const {name,phone,email}=req.body
-    if(!name){
-      console.error("Error","Must have a user Name".red)
+    const { name, phone, email } = req.body;
+    if (!name) {
+     
       return res.status(400).send({
-        status:0,
-        message:"Must have a user Name"
+        status: 0,
+        message: "Must have a user Name",
       });
-    }else if(name.length>50){
-      console.error("Error","Name can not be more th 50 character".red)
+    } else if (name.length > 50) {
+      
       return res.status(400).send({
-        status:0,
-        message:"Name can not be more th 50 character"
+        status: 0,
+        message: "Name can not be more th 50 character",
       });
-    }else if (!phone){
-      console.error("Error","must have phone a number".red)
+    } else if (!phone) {
+      
       return res.status(400).send({
-        status:0,
-        message:"must have phone a number"
+        status: 0,
+        message: "must have phone a number",
       });
-    }else if(!phone.match(/^[0-9]{11}$/)) {
-      console.error("Error","Phone number must have 11 digits".red)
+    } else if (!phone.match(/^[0-9]{11}$/)) {
+     
       return res.status(400).send({
-        status:0,
-        message:"Phone number must have 11 digits"
+        status: 0,
+        message: "Phone number must have 11 digits",
       });
     }
 
-    const userExists=await Users.findOne({email})
-    if(!userExists){
-      console.error("Error","user does not exist".red)
+    const userVerified = await Users.findOne({ email,isVerified:true });
+    if (userVerified){
+      const image = req?.file?.path?.replace(/\\/g, "/");
+      const user = await Users.findOneAndUpdate(
+        { email },
+        { name, phone, image: image, isComplete: true, isVerified: false },
+        { new: true }
+      );
+      res.status(200).send({
+        status: 1,
+        message: "Profile Completed Successfully",
+        user,
+      });
+    } else {
+      const user = await Users.findOneAndUpdate(
+        { email },
+        { isComplete: false, isVerified: false },
+        { new: true }
+      );
       return res.status(400).send({
-        status:0,
-        message:"user does not exist"
+        status: 0,
+        message: "Not verified",
+        isVerified: false,
+        isComplete: false,
       });
     }
-    const image=req?.file?.path?.replace(/\\/g,"/");
-    const user=await Users.findOneAndUpdate(
-      {email},
-      {name,phone,image:image},
-      {new:true}
-    )
-    res.status(200).send({
-      status: 1,
-      message: "Profile Completed Successfully",
-      user
-    })
   } catch (err) {
     return res.status(500).send({
       status: 0,
       message: "Profile Not complete",
+      isComplete: true,
     });
   }
 };
@@ -285,19 +296,19 @@ const loginUser = async (req, res) => {
         message: "please enter email",
         status: 0,
       });
-    }else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    } else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       console.error("Error", "not a valid Email".red);
       return res.status(404).send({
         message: "not a valid Email",
         status: 0,
       });
-    }else if (!password) {
+    } else if (!password) {
       console.error("Error", "please enter password".red);
       return res.status(404).send({
         message: "please enter password",
         status: 0,
       });
-    }else if (
+    } else if (
       !password.match(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
       )
@@ -334,7 +345,7 @@ const loginUser = async (req, res) => {
       { _id: user?._id?.toString() },
       { userAuth: token },
       { new: true }
-    ).select("-password"); // removes password or any other key 
+    ).select("-password"); // removes password or any other key
 
     if (user) {
       res.status(200).send({
@@ -361,69 +372,173 @@ const loginUser = async (req, res) => {
 //@desc forgot password
 //@route POST /api/v1/users/forget_password
 //@access Public
-const forget_password=async(req,res)=>{
-  try{
-    const {email:typed_email}=req.body;
-    if(!typed_email){
-      console.error("Error","please enter email");
+const forget_password = async (req, res) => {
+  try {
+    const { email: typed_email } = req.body;
+    if (!typed_email) {
       return res.status(404).send({
-        status:1,
-        message:"please enter email"
-      }) 
-    }else if (!typed_email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      console.error("Error", "not a valid Email".red);
+        status: 1,
+        message: "please enter email",
+      });
+    } else if (!typed_email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       return res.status(404).send({
         message: "not a valid Email",
         status: 0,
       });
     }
 
-    const userExists=await Users.findOne({email:typed_email})
-    if(!userExists){
-      console.error("Error", "user does not exist".red);
+    const userExists = await Users.findOne({ email: typed_email });
+    if (!userExists) {
       return res.status(404).send({
         message: "user does not exist",
         status: 0,
       });
     }
 
-     // OTP code
-     const otp_code = Math.floor(Math.random() * 900000) + 100000;
+    // OTP code
+    const otp_code = Math.floor(Math.random() * 900000) + 100000;
 
-     const user=await Users.findOneAndUpdate(
-      {email:typed_email},
-      {code:otp_code},
-      {new:true});
-      
-      const {code,email}=user;
-     res.status(200).send({
-      status:1,
-      message:"OTP successfully generated",
+    const user = await Users.findOneAndUpdate(
+      { email: typed_email },
+      { code: otp_code, isForgetPassword: true },
+      { new: true }
+    );
+
+    const { code, email, isForgetPassword } = user;
+    res.status(200).send({
+      status: 1,
+      message: "OTP successfully generated",
       code,
-      email
-     })
-
-  }catch(err){
-    console.error("Error",err.message.red)
-    console.error("msg","Something went wrong")
+      email,
+      isForgetPassword,
+    });
+  } catch (err) {
     return res.status(500).send({
-      status:0,
-      message:"Something went wrong"
-    })
+      status: 0,
+      message: "Something went wrong",
+    });
   }
-}
+};
 
 //@desc reset password
 //@route PUT /api/v1/users/create
 //@access Private
-const reset_password=()=>{
-  try{
+const reset_password = async (req, res) => {
+  try {
+    const { email,password: new_password } = req.body;
 
-  }catch(err){
-    console.error("Error",err.message.red)
+    if (!new_password) {
+      return res.status(404).send({
+        message: "please enter password",
+        status: 0,
+      });
+    } else if (
+      !new_password.match(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+      )
+    ) {
+      return res.status(400).send({
+        message: "not a valid password",
+        status: 0,
+      });
+    }
+
+    const user_verified = await Users.findOne({ email,isForgetPassword:true,isVerified:true });
+    if (!user_verified) {
+      return res.status(404).send({
+        message: "user not verified",
+        status: 0,
+      });
+    } 
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(new_password, salt);
+      const user_update = await Users.findOneAndUpdate(
+        { email: typed_email },
+        {
+          password: hashedPassword,
+          isForgetPassword: false,
+          isVerified: false,
+        },
+        { new: true }
+      );
+      const user_email = user_update.email;
+      res.status(200).send({
+        status: 1,
+        message: "password successfully reset",
+        email: user_email,
+      });
+  } catch (err) {
+    res.status(500).send({
+      status: 0,
+      message: "password failed reset",
+    });
   }
-}
+};
 
+const notification = async (req, res) => {
+  const id = req.id;
+  try {
+    if (id) {
+      const user = await Users.findOneAndUpdate(
+        { _id: id },
+        { is_notification: true },
+        { new: true }
+      );
+      const {is_notification}=user
+      res.status(200).send({
+        status: 1,
+        Message: "Notification is enabled",
+        is_notification,
+      });
+    } else {
+      console.log("msg", "Notification is disabled".red);
+      res.status(400).send({
+        status: 0,
+        message: "Notification is disabled",
+      });
+    }
+  } catch (err) {
+    res.status(500).send({
+      status: 0,
+      message: "Something went wrong",
+    });
+  }
+};
+
+const block_user = async (req, res) => {
+  try {
+    const user_id = req.params.id;
+    const email = req.body.email;
+    const adminUser = await Users.findOne({ email, role: "admin" });
+    if (!adminUser) {
+      return res.status(404).send({
+        message: "you are not Admin",
+        status: 0,
+      });
+    }
+    const user = await Users.findOneAndUpdate(
+      { _id: user_id },
+      { isBlocked: true },
+      { new: true }
+    );
+    const { email:user_email, isBlocked } = user;
+
+    return res.status(200).send({
+      status: 1,
+      message: `${user_email} has been blocked`,
+      isBlocked,
+    });
+  } catch (err) {
+    return res.status(500).send({
+      message: "something went wrong",
+      status: 0,
+    });
+  }
+};
+
+const unblock_user=async(req,res)=>{
+  
+}
 //@desc update a user
 //@route PUT /api/v1/users/create
 //@access Private
@@ -541,6 +656,9 @@ module.exports = {
   loginUser,
   Complete_profile,
   forget_password,
+  reset_password,
+  notification,
+  block_user,
   getAllUsers,
   getUser,
   updateUser,

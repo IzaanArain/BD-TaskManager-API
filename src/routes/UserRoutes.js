@@ -11,6 +11,7 @@ const {
   forget_password,
   reset_password,
   notification,
+  disabled_notification,
   block_user,
   unblock_user,
   change_password
@@ -26,13 +27,14 @@ router.post("/complete_profile",file.user, Complete_profile);
 router.post("/login",file.user,loginUser);
 router.post("/forgot_password",file.user,forget_password);
 router.post("/reset_password",file.user,reset_password);
-router.post("/notification",user_token_auth,notification);
-router.post("/block_user/:id",file.user,block_user);
-router.post("/unblock_user/:id",file.user,unblock_user);
-router.post("/change_password",user_token_auth,file.user,change_password);
+router.post("/notification",file.user,user_token_auth,notification);
+router.post("/disable_notification",file.user,user_token_auth,disabled_notification);
+router.post("/block_user/:id",file.user,user_token_auth,block_user);
+router.post("/unblock_user/:id",file.user,user_token_auth,unblock_user);
+router.post("/change_password",file.user,user_token_auth,change_password);
 router.get("/allusers", user_token_auth, getAllUsers);
 router.get("/", user_token_auth, getUser);
-router.put("/update", user_token_auth, updateUser);
+router.put("/update",file.user,user_token_auth, updateUser);
 router.delete("/delete/:id", user_token_auth, deleteUser);
 
 module.exports = router;

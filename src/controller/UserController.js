@@ -173,8 +173,6 @@ const addUser = async (req, res) => {
 const otp_verify = async (req, res) => {
   try {
     const { code: otp_code, email: typed_email } = req.body;
-    const lowest = 100000;
-    const highest = 999999;
     if (!typed_email) {
       return res.status(404).send({
         status: 0,
@@ -190,19 +188,13 @@ const otp_verify = async (req, res) => {
         status: 0,
         message: "please enter OTP code",
       });
-    } else if (otp_code <= lowest) {
+    } else if (otp_code.length <= 6) {
       return res.status(404).send({
         status: 0,
         message:
-          "OTP code must have six digits,cannot be lower than six digits",
+          "OTP code must have six digits",
       });
-    } else if (otp_code >= highest) {
-      return res.status(404).send({
-        status: 0,
-        message:
-          "OTP code must have six digits,cannot be higher than six digits",
-      });
-    }
+    };
 
     const user = await Users.findOne({ email: typed_email });
     if (!user) {
@@ -251,7 +243,7 @@ const Complete_profile = async (req, res) => {
         status: 0,
         message: "Must have a user Name",
       });
-    } else if (name.length >= 50) {
+    } else if (name.length > 50) {
       return res.status(400).send({
         status: 0,
         message: "Name can not be more th 50 character",
@@ -261,7 +253,7 @@ const Complete_profile = async (req, res) => {
         status: 0,
         message: "must have phone a number",
       });
-    } else if (!phone.match(/^[0-9]{11}$/)) {
+    } else if (!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)) {
       return res.status(400).send({
         status: 0,
         message: "Phone number must have 11 digits",
@@ -606,28 +598,28 @@ const block_user = async (req, res) => {
   try {
     const user_id = req.params.id;
     const adminId = req.id;
-    console.log(adminId)
-    console.log(user_id)
+    console.log(adminId);
+    console.log(user_id);
     const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
     if (!adminUser) {
       return res.status(404).send({
         message: "you are not Admin",
         status: 0,
       });
-    }else if (!mongoose.Types.ObjectId.isValid(user_id)) {
+    } else if (!mongoose.Types.ObjectId.isValid(user_id)) {
       return res.status(404).send({
         status: 0,
         message: "invalid user id, no such user exists",
       });
-    };
-    
+    }
+
     const blockUser = await Users.findById(user_id);
     if (!blockUser) {
       return res.status(404).send({
         status: 1,
         message: "user not found",
       });
-    }else if (blockUser?._id.toString() !== user_id.toString()) {
+    } else if (blockUser?._id.toString() !== user_id.toString()) {
       return res.status(404).send({
         status: 1,
         message: "user is not authorized to update this user",
@@ -665,12 +657,12 @@ const unblock_user = async (req, res) => {
         message: "you are not Admin",
         status: 0,
       });
-    }else if (!mongoose.Types.ObjectId.isValid(user_id)) {
+    } else if (!mongoose.Types.ObjectId.isValid(user_id)) {
       return res.status(404).send({
         status: 0,
         message: "invalid user id, no such user exists",
       });
-    };
+    }
 
     const blockUser = await Users.findById(user_id);
     if (!blockUser) {
@@ -678,7 +670,7 @@ const unblock_user = async (req, res) => {
         status: 1,
         message: "user not found",
       });
-    }else if (blockUser?._id.toString() !== user_id.toString()) {
+    } else if (blockUser?._id.toString() !== user_id.toString()) {
       return res.status(404).send({
         status: 1,
         message: "user is not authorized to block this user",
@@ -710,7 +702,7 @@ const unblock_user = async (req, res) => {
 const change_password = async (req, res) => {
   try {
     const id = req.id;
-    console.log(id)
+    console.log(id);
     const { password: new_password } = req.body;
     if (!new_password) {
       return res.status(404).send({
@@ -754,31 +746,48 @@ const change_password = async (req, res) => {
 // Do not update email and password
 const updateUser = async (req, res) => {
   try {
-    const { name,image,phone } = req?.body;
-    const id=req.id;
-
+    const { name, image, phone } = req?.body;
+    const allowed_image_types = ["image/png", "image/jpeg", "image/gif"];
+    const id = req.id;
     if (!name) {
-      res.status(404);
-      throw new Error("please enter your name");
-    }else if (!phone) {
-      res.status(404);
-      throw new Error("please enter your phone number");
-    }else if (!phone.match(/^[0-9]{11}$/)) {
-      res.status(400);
-      throw new Error("Phone number must have 11 digits");
+      return res.status(404).send({
+        message: "please enter your name",
+      });
+    } else if (name.length > 50) {
+      return res.status(404).send({
+        message: "name can not be more than 50 characters",
+      });
+    } else if (!phone) {
+      return res.status(404).send({
+        message: "please enter your phone number",
+      });
+    } else if (!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)) {
+      return res.status(404).send({
+        message: "Phone number must have 11 digits",
+      });
+    }else if (!req?.file) {
+      return res.status(404).send({
+        status: 0,
+        message: "Please upload an image",
+      });
+    } else if (!allowed_image_types.includes(req?.file?.mimetype)) {
+      return res.status(404).send({
+        status: 0,
+        message: "you can only upload .jpg .png .gif types",
+      });
+    }else{
+      const updateUser = await Users.findByIdAndUpdate(
+        { _id: id },
+        { name, phone, image },
+        { new: true }
+      );
+  
+      return res.status(200).send({
+        status: 1,
+        message: "user has been updated",
+        user: updateUser,
+      });
     }
-
-    const updateUser = await Users.findByIdAndUpdate(
-      { _id: id },
-      {name,phone,image},
-      { new: true }
-    );
-
-    return res.status(200).send({
-      status: 1,
-      message: "user has been updated",
-      user: updateUser,
-    });
   } catch (err) {
     console.error("Error", `${err.message}`.red);
     res.send({ Error: err.message });

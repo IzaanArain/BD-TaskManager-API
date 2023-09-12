@@ -91,7 +91,7 @@ const addUser = async (req, res) => {
       role: set_role,
     } = req.body;
 
-    const allRoles=["admin","user"]
+    const allRoles = ["admin", "user"];
     if (!typed_email) {
       return res.status(404).send({
         status: 0,
@@ -117,19 +117,18 @@ const addUser = async (req, res) => {
         message:
           "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character.",
       });
-    }
-
-    if(!set_role){
+    }else if (!set_role) {
       return res.status(404).send({
         status: 0,
-        message:"must have a role"
+        message: "must have a role",
       });
     }
-    const rol=set_role.toLowerCase()
-    if(!allRoles.includes(rol)){
+    
+    const rol = set_role.toLowerCase();
+    if (!allRoles.includes(rol)) {
       return res.status(404).send({
         status: 0,
-        message:"Invalid role"
+        message: "Invalid role",
       });
     }
     //check if user exists
@@ -140,28 +139,27 @@ const addUser = async (req, res) => {
         message: "user email is already registered, use another email",
       });
     }
-   
-       // hash password
-       const salt = await bcrypt.genSalt(10);
-       const hashedPassword = await bcrypt.hash(typed_password, salt);
 
-       // OTP code
-       const otp_code = Math.floor(Math.random() * 900000) + 100000;
-       // user is created in db
-       const user = await Users.create({
-         email: typed_email,
-         password: hashedPassword,
-         role: rol,
-         code: otp_code,
-       });
+    // hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(typed_password, salt);
 
-       const { code, email, role } = user;
-       return res.status(200).send({
-         status: 1,
-         message: "user OTP created successfully",
-         data: { code, email, role },
-       });
-   
+    // OTP code
+    const otp_code = Math.floor(Math.random() * 900000) + 100000;
+    // user is created in db
+    const user = await Users.create({
+      email: typed_email,
+      password: hashedPassword,
+      role: rol,
+      code: otp_code,
+    });
+
+    const { code, email, role } = user;
+    return res.status(200).send({
+      status: 1,
+      message: "user OTP created successfully",
+      data: { code, email, role },
+    });
   } catch (err) {
     return res.status(500).send({
       status: 0,
@@ -174,29 +172,31 @@ const addUser = async (req, res) => {
 //@route POST /api/v1/users/otp_verify
 const otp_verify = async (req, res) => {
   try {
-    const { code: otp_code,email:typed_email } = req.body;
+    const { code: otp_code, email: typed_email } = req.body;
     const lowest = 100000;
     const highest = 999999;
-    if (!otp_code) {
+    if (!typed_email) {
+      return res.status(404).send({
+        status: 0,
+        message: "please enter your email",
+      });
+    } else if (!typed_email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      return res.status(404).send({
+        status: 0,
+        message: "Please enter a valid email",
+      });
+    } else if (!otp_code) {
       return res.status(404).send({
         status: 0,
         message: "please enter OTP code",
       });
-    } else if (otp_code < lowest) {
-      console.error(
-        "Error",
-        "OTP code must have six digits, cannot be lower than six digits".red
-      );
+    } else if (otp_code <= lowest) {
       return res.status(404).send({
         status: 0,
         message:
           "OTP code must have six digits,cannot be lower than six digits",
       });
-    } else if (otp_code > highest) {
-      console.error(
-        "Error",
-        "OTP code must have six digits, cannot be higher than six digits".red
-      );
+    } else if (otp_code >= highest) {
       return res.status(404).send({
         status: 0,
         message:
@@ -204,20 +204,34 @@ const otp_verify = async (req, res) => {
       });
     }
 
-    const user = await Users.findOne({ code: otp_code },);
+    const user = await Users.findOne({ email: typed_email });
     if (!user) {
       return res.status(404).send({
         status: 0,
         message: "user does not exist",
       });
     }
+    const userCode = user.code;
+    const userEmail = user.email;
 
-    const { code, email, isVerified } = user;
-    res.status(200).send({
-      status: 1,
-      message: "user OTP successfully verified",
-      data: { code, email, isVerified },
-    });
+    if (userCode === parseInt(otp_code)) {
+      const userVerified = await Users.findOneAndUpdate(
+        { email: userEmail },
+        { isVerified: true },
+        { new: true }
+      );
+      const { email, code, isVerified } = userVerified;
+      return res.status(200).send({
+        status: 1,
+        message: "user OTP successfully verified",
+        data: { code, email, isVerified },
+      });
+    } else {
+      return res.status(404).send({
+        status: 0,
+        message: "OTP code does not match",
+      });
+    }
   } catch (err) {
     return res.status(500).send({
       status: 0,
@@ -230,13 +244,14 @@ const otp_verify = async (req, res) => {
 //@route POST /api/v1/users/complete_profile
 const Complete_profile = async (req, res) => {
   try {
-    const { name, phone, email } = req.body;
+    const { name, phone, email,image } = req.body;
+    const allowed_image_types=["image/png","image/jpeg","image/gif"]
     if (!name) {
       return res.status(400).send({
         status: 0,
         message: "Must have a user Name",
       });
-    } else if (name.length > 50) {
+    } else if (name.length >= 50) {
       return res.status(400).send({
         status: 0,
         message: "Name can not be more th 50 character",
@@ -251,14 +266,35 @@ const Complete_profile = async (req, res) => {
         status: 0,
         message: "Phone number must have 11 digits",
       });
+    }else if (!email) {
+      return res.status(404).send({
+        status: 0,
+        message: "please enter your email",
+      });
+    } else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      return res.status(404).send({
+        status: 0,
+        message: "Please enter a valid email",
+      });
+    }else if(!req?.file){
+      return res.status(404).send({
+        status: 0,
+        message: "Please upload an image",
+      });
+    }else if(!allowed_image_types.includes(req?.file?.mimetype)){
+      return res.status(404).send({
+        status: 0,
+        message: "you can only upload .jpg .png .gif types",
+      });
     }
+
 
     const userVerified = await Users.findOne({ email, isVerified: true });
     if (userVerified) {
-      const image = req?.file?.path?.replace(/\\/g, "/");
+      const image_path = req?.file?.path?.replace(/\\/g, "/");
       const user = await Users.findOneAndUpdate(
         { email },
-        { name, phone, image: image, isComplete: true, isVerified: false },
+        { name, phone, image: image_path, isComplete: true, isVerified: false },
         { new: true }
       );
       res.status(200).send({
@@ -272,11 +308,12 @@ const Complete_profile = async (req, res) => {
         { isComplete: false, isVerified: false },
         { new: true }
       );
+      const {isVerified,isComplete}=user
       return res.status(400).send({
         status: 0,
         message: "Not verified",
-        isVerified: false,
-        isComplete: false,
+        isComplete,
+        isVerified
       });
     }
   } catch (err) {
@@ -294,19 +331,16 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
     if (!email) {
-      console.error("Error", "please enter email".red);
       return res.status(404).send({
         message: "please enter email",
         status: 0,
       });
     } else if (!email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      console.error("Error", "not a valid Email".red);
       return res.status(404).send({
         message: "not a valid Email",
         status: 0,
       });
     } else if (!password) {
-      console.error("Error", "please enter password".red);
       return res.status(404).send({
         message: "please enter password",
         status: 0,
@@ -316,9 +350,8 @@ const loginUser = async (req, res) => {
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
       )
     ) {
-      console.error("Error", "not a valid password".red);
       return res.status(400).send({
-        message: "not a valid password",
+        message: "Password should include at least 8 characters, one uppercase letter, one lowercase letter, one digit, and one special character.",
         status: 0,
       });
     }
@@ -348,7 +381,7 @@ const loginUser = async (req, res) => {
       { _id: user?._id?.toString() },
       { userAuth: token },
       { new: true }
-    ).select("-password"); // removes password or any other key
+    )//.select("-password"); // removes password or any other key
 
     if (user) {
       res.status(200).send({
@@ -363,7 +396,6 @@ const loginUser = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("Error", `${err.message}`.red);
     res.status(500).send({
       status: 0,
       message: "Something went wrong",

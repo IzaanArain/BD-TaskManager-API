@@ -8,7 +8,7 @@ const storage=multer.diskStorage({
     },
     filename:function(req,file,cb){
         if(file.fieldname==="image"){
-            const filename=file.originalname.split(" ").join("-");
+            const filename=`${Date.now()}-${file.originalname.split(" ").join("-")}`;
             cb(null,filename);
         }
     }

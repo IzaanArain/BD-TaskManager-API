@@ -13,7 +13,7 @@ const user_token_auth = async (req, res, next) => {
     }else if (auth?.userAuth !== token) {
       return res.status(401).send({
         status: 0,
-        message: "token does not matched",
+        message: "Invalid token",
       });
     } else if (auth?.isBlocked === true) {
       return res.status(401).send({

@@ -188,13 +188,12 @@ const otp_verify = async (req, res) => {
         status: 0,
         message: "please enter OTP code",
       });
-    } else if (otp_code.length <= 6) {
+    } else if (otp_code.length!==6) {
       return res.status(404).send({
         status: 0,
-        message:
-          "OTP code must have six digits",
+        message: "OTP code must have six digits",
       });
-    };
+    }
 
     const user = await Users.findOne({ email: typed_email });
     if (!user) {
@@ -236,7 +235,8 @@ const otp_verify = async (req, res) => {
 //@route POST /api/v1/users/complete_profile
 const Complete_profile = async (req, res) => {
   try {
-    const { name, phone, email, image } = req.body;
+    const userId=req.id;
+    const { name, phone, email} = req.body;
     const allowed_image_types = ["image/png", "image/jpeg", "image/gif"];
     if (!name) {
       return res.status(400).send({
@@ -253,7 +253,9 @@ const Complete_profile = async (req, res) => {
         status: 0,
         message: "must have phone a number",
       });
-    } else if (!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)) {
+    } else if (
+      !phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)
+    ) {
       return res.status(400).send({
         status: 0,
         message: "Phone number must have 11 digits",
@@ -281,11 +283,16 @@ const Complete_profile = async (req, res) => {
     }
 
     const userVerified = await Users.findOne({ email, isVerified: true });
-    if (userVerified) {
+    if(userVerified?._id.toString()!==userId.toString()){
+      return res.status(404).send({
+        status: 0,
+        message: "you are not authorized to access this profile",
+      });
+    }else if (userVerified) {
       const image_path = req?.file?.path?.replace(/\\/g, "/");
       const user = await Users.findOneAndUpdate(
         { email },
-        { name, phone, image: image_path, isComplete: true, isVerified: false },
+        { name, phone, image: image_path, isComplete: true},
         { new: true }
       );
       res.status(200).send({
@@ -296,15 +303,14 @@ const Complete_profile = async (req, res) => {
     } else {
       const user = await Users.findOneAndUpdate(
         { email },
-        { isComplete: false, isVerified: false },
+        { isComplete: false},
         { new: true }
       );
-      const { isVerified, isComplete } = user;
+      const {isComplete} = user;
       return res.status(400).send({
         status: 0,
         message: "Not verified",
         isComplete,
-        isVerified,
       });
     }
   } catch (err) {
@@ -319,8 +325,8 @@ const Complete_profile = async (req, res) => {
 //@desc login a user
 //@route POST /api/v1/users/login
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
   try {
+    const { email, password } = req.body;
     if (!email) {
       return res.status(404).send({
         message: "please enter email",
@@ -348,7 +354,7 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const user = await Users.findOne({ email });
+    const user = await Users.findOne({email});
 
     if (!user) {
       return res.status(400).send({
@@ -356,7 +362,27 @@ const loginUser = async (req, res) => {
         status: 0,
       });
     }
-
+    const userVerified=user.isVerified;
+    if(!userVerified){
+      return res.status(400).send({
+        message: "user is not verified",
+        status: 0,
+      });
+    }
+    const isBlocked=user.isBlocked
+    if(isBlocked){
+      return res.status(400).send({
+        message: "you are blocked please contact admin for further details",
+        status: 0,
+      });
+    }
+    const deleted=user.isDelete
+    if(deleted){
+      return res.status(400).send({
+        message: "you are deleted please contact admin for further details",
+        status: 0,
+      });
+    }
     //compare password with hashed password
     const matchPassword = await bcrypt.compare(password, user.password);
     if (!matchPassword) {
@@ -483,7 +509,6 @@ const reset_password = async (req, res) => {
     const user_verified = await Users.findOne({
       email: typed_email,
       isForgetPassword: true,
-      isVerified: true,
     });
     if (!user_verified) {
       return res.status(404).send({
@@ -498,7 +523,6 @@ const reset_password = async (req, res) => {
       {
         password: hashedPassword,
         isForgetPassword: false,
-        isVerified: false,
       },
       { new: true }
     );
@@ -522,49 +546,13 @@ const notification = async (req, res) => {
   try {
     const id = req.id;
     const { device_token, device, social_token, social_type } = req.body;
-    if (id) {
-      const user = await Users.findOneAndUpdate(
-        { _id: id },
-        {
-          is_notification: true,
-          device_token,
-          device,
-          social_token,
-          social_type,
-        },
-        { new: true }
-      );
-      const { is_notification } = user;
-      res.status(200).send({
-        status: 1,
-        Message: "Notification is enabled",
-        is_notification,
-      });
-    } else {
-      res.status(400).send({
-        status: 0,
-        message: "Notification is disabled",
-      });
-    }
-  } catch (err) {
-    res.status(500).send({
-      status: 0,
-      message: "Something went wrong",
-    });
-  }
-};
+    const user=await Users.findOne({_id:id})
+    const notif=user.is_notification;
 
-//@desc disable notification
-//@route PUT /api/v1/users/disabled_notification
-const disabled_notification = async (req, res) => {
-  try {
-    const id = req.id;
-    const { device_token, device, social_token, social_type } = req.body;
-    if (id) {
-      const user = await Users.findOneAndUpdate(
+      const userUpdate = await Users.findOneAndUpdate(
         { _id: id },
         {
-          is_notification: false,
+          is_notification:!notif,
           device_token,
           device,
           social_token,
@@ -572,18 +560,21 @@ const disabled_notification = async (req, res) => {
         },
         { new: true }
       );
-      const { is_notification } = user;
+      const { is_notification,email } = userUpdate;
+     if(is_notification){
       res.status(200).send({
         status: 1,
-        Message: "Notification is disabled",
+        Message: `Notification is enabled for ${email}`,
         is_notification,
       });
-    } else {
-      res.status(400).send({
-        status: 0,
-        message: "Notification is disabled",
+     }else{
+      res.status(200).send({
+        status: 1,
+        Message: `Notification is disabled for ${email}`,
+        is_notification,
       });
-    }
+     }
+   
   } catch (err) {
     res.status(500).send({
       status: 0,
@@ -598,8 +589,7 @@ const block_user = async (req, res) => {
   try {
     const user_id = req.params.id;
     const adminId = req.id;
-    console.log(adminId);
-    console.log(user_id);
+
     const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
     if (!adminUser) {
       return res.status(404).send({
@@ -609,34 +599,38 @@ const block_user = async (req, res) => {
     } else if (!mongoose.Types.ObjectId.isValid(user_id)) {
       return res.status(404).send({
         status: 0,
-        message: "invalid user id, no such user exists",
+        message: "invalid user id",
       });
     }
 
-    const blockUser = await Users.findById(user_id);
+    const blockUser = await Users.findOne({_id:user_id,role:"user"});
     if (!blockUser) {
       return res.status(404).send({
         status: 1,
         message: "user not found",
       });
-    } else if (blockUser?._id.toString() !== user_id.toString()) {
-      return res.status(404).send({
-        status: 1,
-        message: "user is not authorized to update this user",
-      });
-    }
+    } 
+    const block=blockUser.isBlocked;
     const user = await Users.findOneAndUpdate(
       { _id: user_id },
-      { isBlocked: true },
+      { isBlocked: !block },
       { new: true }
     );
     const { email: user_email, isBlocked } = user;
 
+   if(isBlocked){
     return res.status(200).send({
       status: 1,
       message: `${user_email} has been blocked`,
       isBlocked,
     });
+   }else{
+    return res.status(200).send({
+      status: 1,
+      message: `${user_email} has been unblocked`,
+      isBlocked,
+    });
+   }
   } catch (err) {
     return res.status(500).send({
       message: "something went wrong",
@@ -645,64 +639,12 @@ const block_user = async (req, res) => {
   }
 };
 
-//@desc unblock user
-//@route PUT /api/v1/users/unblock_user
-const unblock_user = async (req, res) => {
-  try {
-    const user_id = req.params.id; // user id
-    const adminId = req.id; // admin id
-    const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
-    if (!adminUser) {
-      return res.status(404).send({
-        message: "you are not Admin",
-        status: 0,
-      });
-    } else if (!mongoose.Types.ObjectId.isValid(user_id)) {
-      return res.status(404).send({
-        status: 0,
-        message: "invalid user id, no such user exists",
-      });
-    }
-
-    const blockUser = await Users.findById(user_id);
-    if (!blockUser) {
-      return res.status(404).send({
-        status: 1,
-        message: "user not found",
-      });
-    } else if (blockUser?._id.toString() !== user_id.toString()) {
-      return res.status(404).send({
-        status: 1,
-        message: "user is not authorized to block this user",
-      });
-    }
-
-    const user = await Users.findOneAndUpdate(
-      { _id: user_id },
-      { isBlocked: false },
-      { new: true }
-    );
-    const { email: user_email, isBlocked } = user;
-
-    return res.status(200).send({
-      status: 1,
-      message: `${user_email} has been blocked`,
-      isBlocked,
-    });
-  } catch (err) {
-    return res.status(500).send({
-      message: "something went wrong",
-      status: 0,
-    });
-  }
-};
 
 //@desc change password
 //@route PUT /api/v1/users/change_password
 const change_password = async (req, res) => {
   try {
     const id = req.id;
-    console.log(id);
     const { password: new_password } = req.body;
     if (!new_password) {
       return res.status(404).send({
@@ -746,7 +688,7 @@ const change_password = async (req, res) => {
 // Do not update email and password
 const updateUser = async (req, res) => {
   try {
-    const { name, image, phone } = req?.body;
+    const { name, phone } = req?.body;
     const allowed_image_types = ["image/png", "image/jpeg", "image/gif"];
     const id = req.id;
     if (!name) {
@@ -761,11 +703,13 @@ const updateUser = async (req, res) => {
       return res.status(404).send({
         message: "please enter your phone number",
       });
-    } else if (!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)) {
+    } else if (
+      !phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/)
+    ) {
       return res.status(404).send({
         message: "Phone number must have 11 digits",
       });
-    }else if (!req?.file) {
+    } else if (!req?.file) {
       return res.status(404).send({
         status: 0,
         message: "Please upload an image",
@@ -775,13 +719,14 @@ const updateUser = async (req, res) => {
         status: 0,
         message: "you can only upload .jpg .png .gif types",
       });
-    }else{
+    } else {
+      const image_path = req?.file?.path?.replace(/\\/g, "/");
       const updateUser = await Users.findByIdAndUpdate(
         { _id: id },
-        { name, phone, image },
+        { name, phone, image: image_path },
         { new: true }
       );
-  
+
       return res.status(200).send({
         status: 1,
         message: "user has been updated",
@@ -794,40 +739,65 @@ const updateUser = async (req, res) => {
   }
 };
 
-//@desc delete a user
-//@route DELETE /api/v1/users/delete
-const deleteUser = async (req, res) => {
+//@desc delete a user 
+//@route DELETE /api/v1/users/user_delete
+const user_delete=async(req,res)=>{
+  const userId=req.id
+    const deleteUser=await Users.findOneAndUpdate(
+      {_id:userId},
+      {isDelete:true},
+      {new:true});
+  
+      const {email,isDelete}=deleteUser;
+        res.status(200).send({
+          status:0,
+          message: `deleted user sucessfully ${email}`,
+          isDelete,
+        })
+}
+//@desc delete a user by admin
+//@route DELETE /api/v1/users/admin_delete
+const adminDeleteUser = async (req, res) => {
   try {
     const adminId = req.id;
     const userId = req.params.id;
-
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(404).send({
         status: 0,
         message: "invalid user id, no such user exists",
       });
     }
+    const userDelete = await Users.findOne({_id:userId,role:"user"});
+    if (!userDelete) {
+      return res.status(404).send({
+        status: 1,
+        message: "user not found",
+      });
+    } 
+
     const adminUser = await Users.findOne({ _id: adminId, role: "admin" });
     if (adminUser) {
+      const del=userDelete.isDelete
       const userUpdated = await Users.findOneAndUpdate(
-        { _id: userId },
-        { isDelete: true },
+        { _id: userId,role:"user" },
+        { isDelete: !del },
         { new: true }
       );
 
-      if (!userUpdated) {
-        return res.status(404).send({
-          status: 0,
-          message: "user not found",
+      const { email, isDelete } = userUpdated;
+      if (isDelete){
+        return res.status(200).send({
+          status: 1,
+          message: `deleted user sucessfully ${email}`,
+          isDelete,
+        });
+      }else{
+        return res.status(200).send({
+          status: 1,
+          message: `user sucessfully restored ${email}`,
+          isDelete,
         });
       }
-
-      const { email, isDelete } = userUpdated;
-      return res.status(200).send({
-        status: 1,
-        message: `deleted user sucessfully ${email}`,
-        isDelete,
-      });
     } else {
       return res.status(400).send({
         message: "you are not admin",
@@ -850,12 +820,11 @@ module.exports = {
   forget_password,
   reset_password,
   notification,
-  disabled_notification,
   block_user,
-  unblock_user,
   change_password,
   getAllUsers,
   getUser,
   updateUser,
-  deleteUser,
+  adminDeleteUser,
+  user_delete
 };

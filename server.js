@@ -3,6 +3,7 @@ const colors = require("colors");
 require("dotenv").config();
 const Connect = require("./src/config/DBConnection");
 const UserRoutes = require("./src/routes/UserRoutes");
+const TaskRoutes= require("./src/routes/TaskRoutes");
 const cors = require("cors");
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/api/v1/users", UserRoutes);
+app.use("/api/v1/task", TaskRoutes);
 
 Connect().then(() => {
   PORT = process.env.PORT || 3000;

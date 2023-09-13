@@ -53,7 +53,7 @@ const getAllUsers = async (req, res) => {
 //@route GET /api/v1/users/:id
 const getUser = async (req, res) => {
   // const { id } = req.params;
-  const { id } = req;
+  const id = req.id;
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       res.status(404);
@@ -65,11 +65,6 @@ const getUser = async (req, res) => {
       res.status(404);
       throw new Error("User not found");
     }
-    if (user?._id.toString() !== id.toString()) {
-      res.status(403);
-      throw new Error("you is not authorized view this user");
-    }
-
     return res.status(200).send({
       status: 1,
       message: "user successfully fetched",
@@ -638,7 +633,6 @@ const block_user = async (req, res) => {
     });
   }
 };
-
 
 //@desc change password
 //@route PUT /api/v1/users/change_password

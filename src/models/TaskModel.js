@@ -26,6 +26,10 @@ const TaskSchema=new mongoose.Schema({
         type:String,
         default:""
     },
+    freeLancer_completion:{
+        type:String,
+        default:""
+    },
     freeLancer_id:{
         type:mongoose.Schema.ObjectId,
         ref:"user",

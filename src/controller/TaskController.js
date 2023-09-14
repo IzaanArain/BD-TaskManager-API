@@ -59,7 +59,6 @@ const create_task = async (req, res) => {
         message: "user not found",
       });
     }
-
     const date1=moment(Date.now())
     const date2=moment(com_date)
     if(date2.isBefore(date1)){

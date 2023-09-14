@@ -4,23 +4,32 @@ const moment=require("moment")
 const TaskSchema=new mongoose.Schema({
     title:{
         type:String,
-        require:[true,"title is mandatory"]
+        required:[true,"title is mandatory"]
     },
     description:{
         type:String,
-        require:true
+        required:[true,"must have description"]
     },
     amount:{
         type:Number,
         default:0,
+        required:[true,"must have amount"]
     },
     image:{
         type:String,
         default:""
     },
+    create_date:{
+        type:String,
+        default:""
+    },
     assign_date:{
         type:String,
-        default:moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a'), 
+        default:"",
+    },
+    accepted_date:{
+        type:String,
+        default:"",
     },
     completion_date:{
         type:String,
@@ -33,7 +42,6 @@ const TaskSchema=new mongoose.Schema({
     freeLancer_id:{
         type:mongoose.Schema.ObjectId,
         ref:"user",
-        required:true,
     },
     status:{
         type:String,
@@ -43,10 +51,12 @@ const TaskSchema=new mongoose.Schema({
     createdBy_id:{
         type:mongoose.Schema.ObjectId,
         ref:"user",
-        required:true
     },
 },{
     timestamps:true
 });
 
 module.exports=mongoose.model("task",TaskSchema);
+
+
+

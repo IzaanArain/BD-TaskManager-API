@@ -447,7 +447,7 @@ const forget_password = async (req, res) => {
 
     const user = await Users.findOneAndUpdate(
       { email: typed_email },
-      { code: otp_code, isForgetPassword: true, isVerified: false },
+      { code: otp_code, isForgetPassword: true,},
       { new: true }
     );
 
@@ -504,6 +504,7 @@ const reset_password = async (req, res) => {
     const user_verified = await Users.findOne({
       email: typed_email,
       isForgetPassword: true,
+      isVerified:true
     });
     if (!user_verified) {
       return res.status(404).send({

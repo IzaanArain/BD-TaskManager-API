@@ -1,5 +1,5 @@
 const mongoose=require("mongoose")
-
+const moment=require("moment")
 
 const TaskSchema=new mongoose.Schema({
     title:{
@@ -10,15 +10,23 @@ const TaskSchema=new mongoose.Schema({
         type:String,
         require:true
     },
-    date:{
-        type:String,
-        default:""
-    },
     amount:{
         type:Number,
         default:0,
     },
-    FreeLancer_id:{
+    image:{
+        type:String,
+        default:""
+    },
+    assign_date:{
+        type:String,
+        default:moment(Date.now()).format('MMMM Do YYYY, h:mm:ss a'), 
+    },
+    completion_date:{
+        type:String,
+        default:""
+    },
+    freeLancer_id:{
         type:mongoose.Schema.ObjectId,
         ref:"user",
         required:true,
@@ -37,4 +45,4 @@ const TaskSchema=new mongoose.Schema({
     timestamps:true
 });
 
-module.exports=mongoose.model("task",UserSchema);
+module.exports=mongoose.model("task",TaskSchema);

@@ -4,7 +4,6 @@ const UserSchema=new mongoose.Schema({
     name:{
         type:String,
         default:"",
-        required:[true,"name is mandatory"]
     },
     email:{
         type:String,

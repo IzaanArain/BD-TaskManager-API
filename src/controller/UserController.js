@@ -159,6 +159,7 @@ const addUser = async (req, res) => {
     return res.status(500).send({
       status: 0,
       message: "User OTP not generated",
+      Error:err.message
     });
   }
 };

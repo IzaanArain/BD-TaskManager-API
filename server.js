@@ -1,9 +1,9 @@
 const express = require("express");
 const colors = require("colors");
 require("dotenv").config();
-const Connect = require("./src/config/DBConnection");
-const UserRoutes = require("./src/routes/UserRoutes");
-const TaskRoutes= require("./src/routes/TaskRoutes");
+const Connect = require("./config/DBConnection");
+const UserRoutes = require("./routes/UserRoutes");
+const TaskRoutes= require("./routes/TaskRoutes");
 const cors = require("cors");
 
 const app = express();

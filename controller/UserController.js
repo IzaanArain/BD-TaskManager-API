@@ -11,32 +11,23 @@ const createToken = (_id) => {
 //@desc get all user
 //@route GET /api/v1/users/
 const getAllUsers = async (req, res) => {
-  const { id } = req;
+ const adminId=req.id
   try {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(404);
-      throw new Error("invalid user id, no such user exists");
-    }
-    if (!id) {
-      res.status(404);
-      throw new Error("you must be login to view users");
-    }
-    const userCheck = await Users.findById(id);
+    const userCheck = await Users.findOne({_id:adminId,role:"admin"});
     if (!userCheck) {
-      res.status(404);
-      throw new Error("User not found");
-    }
-    if (userCheck?._id.toString() !== id.toString()) {
-      res.status(403);
-      throw new Error("you is not authorized view this user");
+      return res.status(404).send({
+        status:0,
+        message:"you are not Admin"
+      })
     }
     const user = await Users.find({}).sort({ createdAt: -1 });
     // res.status(200).send(user);
     const userMap = user.map(
-      ({ name, email, phone, createdAt, updatedAt }) => ({
+      ({ name, email, phone, createdAt, updatedAt,image }) => ({
         name,
         email,
         phone,
+        image,
         createdAt,
         updatedAt,
       })
@@ -55,15 +46,13 @@ const getUser = async (req, res) => {
   // const { id } = req.params;
   const id = req.id;
   try {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(404);
-      throw new Error("invalid user id");
-    }
-    const user = await Users.findById(id);
+    const user = await Users.findOne({_id:id});
 
     if (!user) {
-      res.status(404);
-      throw new Error("User not found");
+      return res.status(404).send({
+        status:0,
+        message:"User not found"
+      })
     }
     return res.status(200).send({
       status: 1,
@@ -71,8 +60,10 @@ const getUser = async (req, res) => {
       user,
     });
   } catch (err) {
-    console.error("Error", `${err.message}`.red);
-    res.send({ Error: err.message });
+    res.status(500).send({
+      status:0, 
+      message:"something went wrong" 
+    });
   }
 };
 
@@ -448,7 +439,7 @@ const forget_password = async (req, res) => {
 
     const user = await Users.findOneAndUpdate(
       { email: typed_email },
-      { code: otp_code, isForgetPassword: true,},
+      { code: otp_code, isForgetPassword: true,isVerified:false},
       { new: true }
     );
 
@@ -794,6 +785,7 @@ const adminDeleteUser = async (req, res) => {
           isDelete,
         });
       }
+
     } else {
       return res.status(400).send({
         message: "you are not admin",

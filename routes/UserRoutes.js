@@ -20,6 +20,7 @@ const file=require("../middleware/Multer")
 
 const router = express.Router();
 
+router.get("/all_users",user_token_auth,getAllUsers)
 router.post("/create",file.user,addUser);
 router.post("/otp_verify",file.user,otp_verify);
 router.post("/complete_profile",file.user,user_token_auth,Complete_profile);

@@ -45,16 +45,16 @@ const create_task = async (req, res) => {
       });
     }
 
-    const date1=moment(Date.now())
-    const date2=moment(com_date)
-    if(date2.isBefore(date1)){
+    const date1 = moment(Date.now());
+    const date2 = moment(com_date);
+    if (date2.isBefore(date1)) {
       return res.status(404).send({
         status: 0,
         message: "completion date can not before creation date",
       });
     }
-    const future_date=date1.add(1,"M");
-    if(date2.isAfter(future_date)){
+    const future_date = date1.add(1, "M");
+    if (date2.isAfter(future_date)) {
       return res.status(404).send({
         status: 0,
         message: "completion date can not be beyond 1 month",
@@ -65,16 +65,15 @@ const create_task = async (req, res) => {
       description,
       amount,
       create_date: moment(Date.now()).format("MMMM Do YYYY, h:mm:ss a"),
-      completion_date:date2.format("MMMM Do YYYY, h:mm:ss a"),
+      completion_date: date2.format("MMMM Do YYYY, h:mm:ss a"),
       status: "todo",
       createdBy_id: adminId,
     });
     res.status(200).send({
       status: 1,
       message: "Successfully created task",
-      task
+      task,
     });
-
   } catch (err) {
     console.error("Error", err.message.red);
     res.status(500).send({
@@ -154,6 +153,174 @@ const assign_task = async (req, res) => {
 
 const accept_task = async (req, res) => {
   try {
+    const userId = req.id;
+    const task_id = req.query.task_id;
+    const user = await User.findOne({ _id: userId, role: "user" });
+    if (!user) {
+      return res.status(400).send({
+        status: 0,
+        message: "user not found",
+      });
+    }
+    const task = await Task.findOne({
+      _id: task_id,
+      freeLancer_id: userId,
+      status: "assigned",
+    });
+    if (!task) {
+      return res.status(400).send({
+        status: 0,
+        message: "No assigned task found",
+      });
+    }
+    const taskId = task?._id;
+    const accept_task = await Task.findOneAndUpdate(
+      { _id: taskId },
+      {
+        task_accepted: true,
+        status: "accepted",
+        accepted_date: moment(Date.now()).format("MMMM Do YYYY, h:mm:ss a"),
+      },
+      { new: true }
+    );
+    res.status(200).send({
+      status: 1,
+      message: "Task accepted by user",
+      accept_task,
+    });
+  } catch (err) {
+    console.log("Error", err.message.red);
+    res.status(500).send({
+      status: 0,
+      message: "Something went wrong",
+      error: err.message,
+    });
+  }
+};
+
+const task_completed = async (req, res) => {
+  try {
+    const userId = req.id;
+    const task_id = req.query.task_id;
+    const user = await User.findOne({ _id: userId, role: "user" });
+    if (!user) {
+      return res.status(400).send({
+        status: 0,
+        message: "user not found",
+      });
+    }
+    const task = await Task.findOneAndUpdate({
+      _d: task_id,
+      freeLancer_id: userId,
+      status: "accepted",
+    });
+    if (!task) {
+      return res.status(400).send({
+        status: 0,
+        message: "No accepted task found",
+      });
+    }
+    const taskId = task?._id;
+    const complted_task = await Task.findOneAndUpdate(
+      { _id: taskId },
+      {
+        status: "completedByFreelancer",
+        freeLancer_completion: moment(Date.now()).format(
+          "MMMM Do YYYY, h:mm:ss a"
+        ),
+      },
+      { new: true }
+    );
+    res.status(200).send({
+      status: 1,
+      message: "freelancer completed task successfully",
+      complted_task,
+    });
+  } catch (err) {
+    console.log("Error", err.message.red);
+    res.status(500).send({
+      status: 0,
+      message: "Something went wrong",
+      error: err.message,
+    });
+  }
+};
+
+const completion_approval = async (req, res) => {
+  try {
+    const adminId = req.id;
+    const userId = req.query.user_id;
+    const taskId = req.query.task_id;
+    const admin = await User.findOne({ _id: adminId, role: "admin" });
+    if (!admin) {
+      return res.status(400).send({
+        status: 0,
+        message: "you are not admin",
+      });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(404).send({
+        status: 0,
+        message: "not a valid user",
+      });
+    }
+    const user = await User.findOne({ _id: userId, role: "user" });
+    if (!user) {
+      return res.status(404).send({
+        status: 0,
+        message: "user not found",
+      });
+    }
+    const task = await Task.findOne({
+      _id: taskId,
+      freeLancer_id: userId,
+      // status: "completedByFreelancer",
+    });
+    if (!task) {
+      return res.status(404).send({
+        status: 0,
+        message: "task not found",
+      });
+    }else if(task.status==="completionApproval"){
+      return res.status(404).send({
+        status: 0,
+        message: "task has already been approved",
+      });
+    }
+
+    const date1=moment(task.completion_date,"MMMM Do YYYY, h:mm:ss a")
+    const date2=moment(task.freeLancer_completion,"MMMM Do YYYY, h:mm:ss a")
+
+    if(date2.isAfter(date1)){
+      const num_days=date2.diff(date1,"days")
+      const num_hours=date2.hour()
+      const total_hours=(num_days*24)+num_hours
+      const d_amount=total_hours*10;
+      const amount=task.amount-d_amount
+      const task_completed = await Task.findOneAndUpdate(
+        { _id: task._id },
+        { status: "completionApproval", isCompleted: true,amount },
+        { new: true }
+      );
+  
+      res.status(200).send({
+        status:1,
+        message:"completion approved",
+        task:task_completed
+      })
+    }else{
+      const task_completed = await Task.findOneAndUpdate(
+        { _id: task._id },
+        { status: "completionApproval", isCompleted: true },
+        { new: true }
+      );
+  
+      res.status(200).send({
+        status:1,
+        message:"completion approved",
+        task:task_completed
+      })
+    }
   } catch (err) {
     console.log("Error", err.message.red);
     res.status(500).send({
@@ -167,4 +334,6 @@ module.exports = {
   create_task,
   assign_task,
   accept_task,
+  task_completed,
+  completion_approval,
 };

@@ -31,9 +31,17 @@ const TaskSchema=new mongoose.Schema({
         type:String,
         default:"",
     },
+    task_accepted:{
+        type:Boolean,
+        default:false
+    },
     completion_date:{
         type:String,
         default:""
+    },
+    isCompleted:{
+        type:Boolean,
+        default:false
     },
     freeLancer_completion:{
         type:String,
@@ -45,7 +53,7 @@ const TaskSchema=new mongoose.Schema({
     },
     status:{
         type:String,
-        enum:["todo","assigned", 'completionApproval',"completedByFreelancer"],
+        enum:["todo","assigned","accepted","completedByFreelancer",'completionApproval'],
         default:"todo",
     },
     createdBy_id:{

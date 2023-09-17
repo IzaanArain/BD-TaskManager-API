@@ -274,12 +274,12 @@ const completion_approval = async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       freeLancer_id: userId,
-      // status: "completedByFreelancer",
+      status: "completedByFreelancer",
     });
     if (!task) {
       return res.status(404).send({
         status: 0,
-        message: "task not found",
+        message: "task not found, task has be completed by freelancer",
       });
     }else if(task.status==="completionApproval"){
       return res.status(404).send({

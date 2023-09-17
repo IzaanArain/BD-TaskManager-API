@@ -209,8 +209,8 @@ const task_completed = async (req, res) => {
         message: "user not found",
       });
     }
-    const task = await Task.findOneAndUpdate({
-      _d: task_id,
+    const task = await Task.findOne({
+      _id: task_id,
       freeLancer_id: userId,
       status: "accepted",
     });
@@ -274,7 +274,7 @@ const completion_approval = async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       freeLancer_id: userId,
-      status: "completedByFreelancer",
+      // status: "completedByFreelancer",
     });
     if (!task) {
       return res.status(404).send({

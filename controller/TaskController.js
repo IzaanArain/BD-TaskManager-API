@@ -281,45 +281,46 @@ const completion_approval = async (req, res) => {
         status: 0,
         message: "task not found, task has be completed by freelancer",
       });
-    }else if(task.status==="completionApproval"){
+    } else if (task.status === "completionApproval") {
       return res.status(404).send({
         status: 0,
         message: "task has already been approved",
       });
     }
 
-    const date1=moment(task.completion_date,"MMMM Do YYYY, h:mm:ss a")
-    const date2=moment(task.freeLancer_completion,"MMMM Do YYYY, h:mm:ss a")
+    const date1 = moment(task.completion_date, "MMMM Do YYYY, h:mm:ss a");
+    const date2 = moment(task.freeLancer_completion, "MMMM Do YYYY, h:mm:ss a");
 
-    if(date2.isAfter(date1)){
-      const num_days=date2.diff(date1,"days")
-      const num_hours=date2.hour()
-      const total_hours=(num_days*24)+num_hours
-      const d_amount=total_hours*10;
-      const amount=task.amount-d_amount
+    if (date2.isAfter(date1)) {
+      const num_days = date2.diff(date1, "days");
+      const num_hours = date2.hour();
+      const total_hours = num_days * 24 + num_hours;
+      const d_amount = total_hours * 10;
+      const amount = task.amount - d_amount;
+
       const task_completed = await Task.findOneAndUpdate(
         { _id: task._id },
-        { status: "completionApproval", isCompleted: true,amount },
+        { status: "completionApproval", isCompleted: true, amount },
         { new: true }
       );
-  
+
       res.status(200).send({
-        status:1,
-        message:"completion approved",
-        task:task_completed
-      })
-    }else{
+        status: 1,
+        message: "completion approved",
+        task: task_completed,
+      });
+    } else {
       const task_completed = await Task.findOneAndUpdate(
         { _id: task._id },
         { status: "completionApproval", isCompleted: true },
         { new: true }
       );
-  
+
       res.status(200).send({
-        status:1,
-        message:"completion approved",
-        task:task_completed
-      })
+        status: 1,
+        message: "completion approved",
+        task: task_completed,
+      });
     }
   } catch (err) {
     console.log("Error", err.message.red);
@@ -330,10 +331,149 @@ const completion_approval = async (req, res) => {
     });
   }
 };
+
+// Get tasks
+
+const freelancer_task_assigned=async(req,res)=>{
+  try{
+    const userId=req.id
+    const task=await Task.findOne({freeLancer_id:userId,status:"assigned"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No assigned task found",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all assigned tasks",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
+
+const freelancer_task_accepted=async(req,res)=>{
+  try{
+    const userId=req.id
+    const task=await Task.findOne({freeLancer_id:userId,status:"accepted"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No accepted task found",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all accepted tasks",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
+
+const freelancer_task_completed=async(req,res)=>{
+  try{
+    const userId=req.id
+    const task=await Task.findOne({freeLancer_id:userId,status:"completedByFreelancer"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No completed by user",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all completed tasks by user tasks",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
+
+const freelancer_task_approved=async(req,res)=>{
+  try{
+    const userId=req.id
+    const task=await Task.findOne({freeLancer_id:userId,status:"completionApproval"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No task approved by admin",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all approved task",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
+
+const all_completed_task=async(req,res)=>{
+  try{
+    const adminId=req.id
+    const admin=await User.findOne({_id:adminId,role:"admin"})
+    if(!admin){
+      return   res.status(500).send({
+        status:0,
+        message:"you are not admin",
+      })
+    }
+    const task=await Task.findOne({createdBy_id:adminId,status:"completionApproval"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No task approved by admin",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all approved task",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
 module.exports = {
   create_task,
   assign_task,
   accept_task,
   task_completed,
   completion_approval,
+  freelancer_task_assigned,
+  freelancer_task_accepted,
+  freelancer_task_completed,
+  freelancer_task_approved,
+  all_completed_task
 };

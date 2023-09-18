@@ -333,11 +333,42 @@ const completion_approval = async (req, res) => {
 };
 
 // Get tasks
+const freelancer_task_todo=async(req,res)=>{
+  try{
+    const adminId=req.id
+    const admin=await User.findOne({_id:adminId,role:"admin"})
+    if(!admin){
+      return   res.status(500).send({
+        status:0,
+        message:"you are not admin",
+      })
+    }
+    const task=await Task.find({createdBy_id:adminId,status:"todo"})
+    if(!task){
+      return   res.status(500).send({
+        status:0,
+        message:"No task todo found",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all todo tasks",
+      task
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
 
 const freelancer_task_assigned=async(req,res)=>{
   try{
     const userId=req.id
-    const task=await Task.findOne({freeLancer_id:userId,status:"assigned"})
+    const task=await Task.find({freeLancer_id:userId,status:"assigned"})
     if(!task){
       return   res.status(500).send({
         status:0,
@@ -362,7 +393,7 @@ const freelancer_task_assigned=async(req,res)=>{
 const freelancer_task_accepted=async(req,res)=>{
   try{
     const userId=req.id
-    const task=await Task.findOne({freeLancer_id:userId,status:"accepted"})
+    const task=await Task.find({freeLancer_id:userId,status:"accepted"})
     if(!task){
       return   res.status(500).send({
         status:0,
@@ -387,7 +418,7 @@ const freelancer_task_accepted=async(req,res)=>{
 const freelancer_task_completed=async(req,res)=>{
   try{
     const userId=req.id
-    const task=await Task.findOne({freeLancer_id:userId,status:"completedByFreelancer"})
+    const task=await Task.find({freeLancer_id:userId,status:"completedByFreelancer"})
     if(!task){
       return   res.status(500).send({
         status:0,
@@ -412,7 +443,7 @@ const freelancer_task_completed=async(req,res)=>{
 const freelancer_task_approved=async(req,res)=>{
   try{
     const userId=req.id
-    const task=await Task.findOne({freeLancer_id:userId,status:"completionApproval"})
+    const task=await Task.find({freeLancer_id:userId,status:"completionApproval"})
     if(!task){
       return   res.status(500).send({
         status:0,
@@ -437,7 +468,7 @@ const freelancer_task_approved=async(req,res)=>{
 const all_completed_task=async(req,res)=>{
   try{
     const adminId=req.id
-    const admin=await User.findOne({_id:adminId,role:"admin"})
+    const admin=await User.find({_id:adminId,role:"admin"})
     if(!admin){
       return   res.status(500).send({
         status:0,
@@ -471,6 +502,7 @@ module.exports = {
   accept_task,
   task_completed,
   completion_approval,
+  freelancer_task_todo,
   freelancer_task_assigned,
   freelancer_task_accepted,
   freelancer_task_completed,

@@ -17,6 +17,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use("/api/v1/users", UserRoutes);
 app.use("/api/v1/task", TaskRoutes);
+app.use("/public",express.static("public"))
 
 Connect().then(() => {
   PORT = process.env.PORT || 3000;

@@ -269,11 +269,18 @@ const Complete_profile = async (req, res) => {
       });
     }
 
+    const user=await Users.findOne({_id:userId})
+    if (!user){
+      return res.status(404).send({
+        status: 0,
+        message: "user not found",
+      });
+    }
     const userVerified = await Users.findOne({ email, isVerified: true });
     if(userVerified?._id.toString()!==userId.toString()){
       return res.status(404).send({
         status: 0,
-        message: "you are not authorized to access this profile",
+        message: "you must be verified to access this profile",
       });
     }else if (userVerified) {
       const image_path = req?.file?.path?.replace(/\\/g, "/");

@@ -20,6 +20,7 @@ const file=require("../middleware/Multer")
 
 const router = express.Router();
 
+router.get("/", user_token_auth, getUser);
 router.get("/all_users",user_token_auth,getAllUsers)
 router.post("/create",file.user,addUser);
 router.post("/otp_verify",file.user,otp_verify);
@@ -31,7 +32,6 @@ router.put("/notification",file.user,user_token_auth,notification);
 router.post("/block_user/:id",file.user,user_token_auth,block_user);
 router.post("/change_password",file.user,user_token_auth,change_password);
 router.get("/allusers", user_token_auth, getAllUsers);
-router.get("/", user_token_auth, getUser);
 router.put("/update",file.user,user_token_auth, updateUser);
 router.delete("/admin_delete/:id", user_token_auth, adminDeleteUser);
 router.delete("/user_delete", user_token_auth, user_delete);

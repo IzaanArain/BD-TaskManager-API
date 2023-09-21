@@ -60,6 +60,10 @@ const TaskSchema=new mongoose.Schema({
         type:mongoose.Schema.ObjectId,
         ref:"user",
     },
+    isDelete:{
+        type:Boolean,
+        default:false,
+    }
 },{
     timestamps:true
 });

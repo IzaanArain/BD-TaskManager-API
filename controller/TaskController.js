@@ -496,6 +496,47 @@ const all_completed_task=async(req,res)=>{
     })
   }
 }
+
+// delete
+const delete_task=async(req,res)=>{
+  try{
+    const adminId=req?.id;
+    const taskId=req.params.id
+
+    const admin=await User.findOne({_id:adminId,role:"admin"});
+    if(!admin){
+      return res.status(404).send({
+        status:0,
+        message:"Admin not found",
+      });
+    }
+    const task=await Task.findOneAndUpdate(
+      {_id:taskId,createdBy_id:adminId},
+      {isDelete:true},
+      {new:true});
+    if(!task){
+      return res.status(404).send({
+        status:0,
+        message:"task not found",
+      });
+    }else{
+      const isDelete=task.isDelete;
+      const title=task.title;
+      res.status(200).send({
+        status:1,
+        message:"task deleted successfully",
+        title,
+        isDelete
+      })
+    }
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
 module.exports = {
   create_task,
   assign_task,
@@ -507,5 +548,6 @@ module.exports = {
   freelancer_task_accepted,
   freelancer_task_completed,
   freelancer_task_approved,
-  all_completed_task
+  all_completed_task,
+  delete_task
 };

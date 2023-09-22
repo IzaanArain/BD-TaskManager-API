@@ -295,12 +295,6 @@ const Complete_profile = async (req, res) => {
         user,
       });
     } else {
-      const user = await Users.findOneAndUpdate(
-        { email },
-        { isComplete: false},
-        { new: true }
-      );
-      const {isComplete} = user;
       return res.status(400).send({
         status: 0,
         message: "Not verified",

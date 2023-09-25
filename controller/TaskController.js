@@ -332,39 +332,7 @@ const completion_approval = async (req, res) => {
   }
 };
 
-// Get tasks
-const freelancer_task_todo=async(req,res)=>{
-  try{
-    const adminId=req.id
-    const admin=await User.findOne({_id:adminId,role:"admin"})
-    if(!admin){
-      return   res.status(500).send({
-        status:0,
-        message:"you are not admin",
-      })
-    }
-    const task=await Task.find({createdBy_id:adminId,status:"todo"})
-    if(!task){
-      return   res.status(500).send({
-        status:0,
-        message:"No task todo found",
-      })
-    }
-
-    res.status(200).send({
-      status:0,
-      message:"all todo tasks",
-      task
-    })
-  }catch(err){
-    res.status(500).send({
-      status:0,
-      message:"Something went wrong",
-      Error:err.message
-    })
-  }
-}
-
+// User Get all assigned tasks
 const freelancer_task_assigned=async(req,res)=>{
   try{
     const userId=req.id
@@ -497,6 +465,69 @@ const all_completed_task=async(req,res)=>{
   }
 }
 
+//Admin get all todos
+const admin_task_todo=async(req,res)=>{
+  try{
+    const adminId=req.id
+    const limit=Number(req.query.limit)
+    const offset=Number(req.query.offset)
+    const skip=(offset-1)*limit
+    const admin=await User.findOne({_id:adminId,role:"admin"})
+    if(!admin){
+      return   res.status(500).send({
+        status:0,
+        message:"you are not admin",
+      })
+    };
+
+    const Todos=await Task.aggregate([
+      {
+        '$match': {
+          'status': 'todo'
+        }
+      }, {
+        '$lookup': {
+          'from': 'users', 
+          'localField': 'createdBy_id', 
+          'foreignField': '_id', 
+          'as': 'result'
+        }
+      }, {
+        '$unwind': {
+          'path': '$result',
+        }
+      },{
+        '$unset':'result.password'
+      },{
+        '$limit': limit
+      },{
+        '$skip': skip
+      },{
+        '$sort':{
+          'createdAt':-1
+        }
+      }
+    ]);
+    if(!Todos){
+      return   res.status(500).send({
+        status:0,
+        message:"No task todo found",
+      })
+    }
+
+    res.status(200).send({
+      status:0,
+      message:"all todo tasks",
+      Todos
+    })
+  }catch(err){
+    res.status(500).send({
+      status:0,
+      message:"Something went wrong",
+      Error:err.message
+    })
+  }
+}
 // delete
 const delete_task=async(req,res)=>{
   try{
@@ -543,7 +574,7 @@ module.exports = {
   accept_task,
   task_completed,
   completion_approval,
-  freelancer_task_todo,
+  admin_task_todo,
   freelancer_task_assigned,
   freelancer_task_accepted,
   freelancer_task_completed,

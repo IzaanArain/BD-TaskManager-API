@@ -6,7 +6,7 @@ const { create_task,
     accept_task,
     task_completed,
     completion_approval,
-    freelancer_task_todo,
+    admin_task_todo,
     freelancer_task_assigned,
     freelancer_task_accepted,
     freelancer_task_completed,
@@ -16,7 +16,7 @@ const { create_task,
 const router=express.Router()
 
 router.post("/create_task",file.user,user_token_auth,create_task);
-router.get("/freelancer_task_todo",user_token_auth,freelancer_task_todo);
+router.get("/admin_task_todo",user_token_auth, admin_task_todo);
 router.put("/assign_task",file.user,user_token_auth,assign_task);
 router.put("/accept_task",user_token_auth,accept_task);
 router.put("/task_completed",user_token_auth,task_completed);

@@ -697,11 +697,6 @@ const updateUser = async (req, res) => {
       return res.status(404).send({
         message: "Phone number must have 11 digits",
       });
-    } else if (!req?.file) {
-      return res.status(404).send({
-        status: 0,
-        message: "Please upload an image",
-      });
     } else if (!allowed_image_types.includes(req?.file?.mimetype)) {
       return res.status(404).send({
         status: 0,

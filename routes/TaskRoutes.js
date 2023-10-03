@@ -12,7 +12,8 @@ const { create_task,
     freelancer_task_completed,
     freelancer_task_approved,
     all_completed_task,
-    delete_task } = require("../controller/TaskController");
+    delete_task,
+    getAllTasks } = require("../controller/TaskController");
 const router=express.Router()
 
 router.post("/create_task",file.user,user_token_auth,create_task);
@@ -27,6 +28,8 @@ router.get("/freelancer_task_completed",user_token_auth,freelancer_task_complete
 router.get("/freelancer_task_approved",user_token_auth,freelancer_task_approved);
 router.get("/all_completed_task",user_token_auth,all_completed_task);
 router.get("/task_deleted",user_token_auth, delete_task);
+
+router.get("/all_tasks",user_token_auth, getAllTasks);
 
 
 module.exports=router

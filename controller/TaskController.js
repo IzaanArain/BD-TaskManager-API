@@ -7,6 +7,7 @@ const create_task = async (req, res) => {
   try {
     const adminId = req.id;
     const { title, description, amount, completion_date } = req.body;
+    const allowed_image_types = ["image/png", "image/jpeg", "image/gif"];
     const admin = await User.findOne({ _id: adminId, role: "admin" });
     if (!admin) {
       return res.status(404).send({
@@ -60,6 +61,7 @@ const create_task = async (req, res) => {
         message: "completion date can not be beyond 1 month",
       });
     }
+    const image_path=req?.file?.path?.replace(/\\/g, "/");
     const task = await Task.create({
       title,
       description,
@@ -68,6 +70,7 @@ const create_task = async (req, res) => {
       completion_date: date2.format("MMMM Do YYYY, h:mm:ss a"),
       status: "todo",
       createdBy_id: adminId,
+      image:image_path
     });
     res.status(200).send({
       status: 1,
@@ -474,6 +477,27 @@ const all_completed_task = async (req, res) => {
   }
 };
 
+//Admin get all tasks
+const getAllTasks = async (req, res) => {
+  try {
+    const adminId = req.id;
+    const admin = await User.findOne({ _id: adminId, role: "admin" });
+    if (!admin) {
+      return res.status(403).send({
+        status: 0,
+        message: "you are not admin",
+      });
+    }
+    const tasks = await Task.find({}).sort({ createdAt: -1 });
+    res.status(200).send(tasks);
+  } catch (err) {
+    res.status(500).send({
+      status: 0,
+      message: "Something went wrong",
+      Error: err.message,
+    });
+  }
+};
 //Admin get all todos
 const admin_task_todo = async (req, res) => {
   try {
@@ -543,6 +567,7 @@ const admin_task_todo = async (req, res) => {
     });
   }
 };
+
 // delete
 const delete_task = async (req, res) => {
   try {
@@ -597,4 +622,5 @@ module.exports = {
   freelancer_task_approved,
   all_completed_task,
   delete_task,
+  getAllTasks,
 };

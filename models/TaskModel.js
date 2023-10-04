@@ -1,5 +1,4 @@
 const mongoose=require("mongoose")
-const moment=require("moment")
 
 const TaskSchema=new mongoose.Schema({
     title:{
@@ -61,6 +60,10 @@ const TaskSchema=new mongoose.Schema({
         ref:"user",
     },
     isDelete:{
+        type:Boolean,
+        default:false,
+    }
+    ,lateSubmission:{
         type:Boolean,
         default:false,
     }

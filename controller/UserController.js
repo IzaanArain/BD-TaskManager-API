@@ -22,18 +22,18 @@ const getAllUsers = async (req, res) => {
     }
     const user = await Users.find({}).sort({ createdAt: -1 });
     // res.status(200).send(user);
-    const userMap = user.map(
-      ({ name, email, phone, createdAt, updatedAt,image }) => ({
-        name,
-        email,
-        phone,
-        image,
-        createdAt,
-        updatedAt,
-      })
-    );
+    // const userMap = user.map(
+    //   ({ name, email, phone, createdAt, updatedAt,image }) => ({
+    //     name,
+    //     email,
+    //     phone,
+    //     image,
+    //     createdAt,
+    //     updatedAt,
+    //   })
+    // );
     // console.log(userMap);
-    res.status(200).send(userMap);
+    res.status(200).send(user);
   } catch (err) {
     console.error("Error", `${err.message}`.red);
     res.send({ Error: err.message });

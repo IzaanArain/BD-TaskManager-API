@@ -488,7 +488,23 @@ const getAllTasks = async (req, res) => {
         message: "you are not admin",
       });
     }
-    const tasks = await Task.find({}).sort({ createdAt: -1 });
+    //const tasks = await Task.find({}).sort({ createdAt: -1 });
+    const tasks = await Task.aggregate([
+      {
+        $lookup:{
+          from:"users",
+          localField:"freeLancer_id",
+          foreignField:"_id",
+          as:"result"
+        },
+      },
+      {
+        $unwind:{
+          path:"$result",
+          preserveNullAndEmptyArrays:true
+        }
+      }
+    ])
     res.status(200).send(tasks);
   } catch (err) {
     res.status(500).send({

@@ -61,7 +61,7 @@ const create_task = async (req, res) => {
         message: "completion date can not be beyond 1 month",
       });
     }
-    const image_path=req?.file?.path?.replace(/\\/g, "/");
+    const image_path = req?.file?.path?.replace(/\\/g, "/");
     const task = await Task.create({
       title,
       description,
@@ -70,7 +70,7 @@ const create_task = async (req, res) => {
       completion_date: date2.format("MMMM Do YYYY, h:mm:ss a"),
       status: "todo",
       createdBy_id: adminId,
-      image:image_path
+      image: image_path,
     });
     res.status(200).send({
       status: 1,
@@ -142,7 +142,7 @@ const assign_task = async (req, res) => {
     res.status(200).send({
       status: 0,
       message: "successfully assigned task",
-      task:task_update,
+      task: task_update,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -189,7 +189,7 @@ const accept_task = async (req, res) => {
     res.status(200).send({
       status: 1,
       message: "Task accepted by user",
-      task:accept_task,
+      task: accept_task,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -237,7 +237,7 @@ const task_completed = async (req, res) => {
     res.status(200).send({
       status: 1,
       message: "freelancer completed task successfully",
-      task:complted_task,
+      task: complted_task,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -446,26 +446,27 @@ const freelancer_task_approved = async (req, res) => {
 const all_completed_task = async (req, res) => {
   try {
     const adminId = req.id;
-    const admin = await User.find({ _id: adminId, role: "admin" });
+    const admin = await User.findOne({ _id: adminId, role: "admin" });
     if (!admin) {
       return res.status(500).send({
         status: 0,
         message: "you are not admin",
       });
     }
-    const task = await Task.findOne({
-      createdBy_id: adminId,
+    console.log(adminId);
+    const task = await Task.find({
+      //createdBy_id: adminId,
       status: "completionApproval",
     });
     if (!task) {
-      return res.status(500).send({
+      return res.status(400).send({
         status: 0,
         message: "No task approved by admin",
       });
     }
 
     res.status(200).send({
-      status: 0,
+      status: 1,
       message: "all approved task",
       task,
     });
@@ -492,20 +493,20 @@ const getAllTasks = async (req, res) => {
     //const tasks = await Task.find({}).sort({ createdAt: -1 });
     const tasks = await Task.aggregate([
       {
-        $lookup:{
-          from:"users",
-          localField:"freeLancer_id",
-          foreignField:"_id",
-          as:"result"
+        $lookup: {
+          from: "users",
+          localField: "freeLancer_id",
+          foreignField: "_id",
+          as: "result",
         },
       },
       {
-        $unwind:{
-          path:"$result",
-          preserveNullAndEmptyArrays:true
-        }
-      }
-    ])
+        $unwind: {
+          path: "$result",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+    ]);
     res.status(200).send(tasks);
   } catch (err) {
     res.status(500).send({

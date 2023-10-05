@@ -142,7 +142,7 @@ const assign_task = async (req, res) => {
     res.status(200).send({
       status: 0,
       message: "successfully assigned task",
-      task_update,
+      task:task_update,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -189,7 +189,7 @@ const accept_task = async (req, res) => {
     res.status(200).send({
       status: 1,
       message: "Task accepted by user",
-      accept_task,
+      task:accept_task,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -237,7 +237,7 @@ const task_completed = async (req, res) => {
     res.status(200).send({
       status: 1,
       message: "freelancer completed task successfully",
-      complted_task,
+      task:complted_task,
     });
   } catch (err) {
     console.log("Error", err.message.red);
@@ -442,6 +442,7 @@ const freelancer_task_approved = async (req, res) => {
   }
 };
 
+// admin get all completed tasks
 const all_completed_task = async (req, res) => {
   try {
     const adminId = req.id;

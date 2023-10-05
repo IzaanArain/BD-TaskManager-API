@@ -303,7 +303,7 @@ const completion_approval = async (req, res) => {
 
       const task_completed = await Task.findOneAndUpdate(
         { _id: task._id },
-        { status: "completionApproval", isCompleted: true, amount },
+        { status: "completionApproval", isCompleted: true, amount ,lateSubmission:true},
         { new: true }
       );
 

@@ -198,11 +198,11 @@ const otp_verify = async (req, res) => {
         { isVerified: true },
         { new: true }
       );
-      const { email, code, isVerified } = userVerified;
+      const { email, code, isVerified,isForgetPassword } = userVerified;
       return res.status(200).send({
         status: 1,
         message: "user OTP successfully verified",
-        data: { code, email, isVerified },
+        data: { code, email, isVerified,isForgetPassword },
       });
     } else {
       return res.status(404).send({
@@ -496,7 +496,7 @@ const reset_password = async (req, res) => {
 
     const user_verified = await Users.findOne({
       email: typed_email,
-      isForgetPassword: true,
+      isForgetPassword:true,
       isVerified:true
     });
     if (!user_verified) {

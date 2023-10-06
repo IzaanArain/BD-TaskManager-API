@@ -277,7 +277,7 @@ const completion_approval = async (req, res) => {
     const task = await Task.findOne({
       _id: taskId,
       freeLancer_id: userId,
-      // status: "completedByFreelancer",
+      status: "completedByFreelancer",
     });
     if (!task) {
       return res.status(404).send({
@@ -291,6 +291,8 @@ const completion_approval = async (req, res) => {
       });
     }
 
+    const amount=task?.amount;
+
     const date1 = moment(task.completion_date, "MMMM Do YYYY, h:mm:ss a");
     const date2 = moment(task.freeLancer_completion, "MMMM Do YYYY, h:mm:ss a");
 
@@ -299,11 +301,11 @@ const completion_approval = async (req, res) => {
       const num_hours = date2.hour();
       const total_hours = num_days * 24 + num_hours;
       const d_amount = total_hours * 10;
-      const amount = task.amount - d_amount;
+      const p_amount = task.amount - d_amount;
 
       const task_completed = await Task.findOneAndUpdate(
         { _id: task._id },
-        { status: "completionApproval", isCompleted: true, amount ,lateSubmission:true},
+        { status: "completionApproval", isCompleted: true,lateSubmission:true, paid_amount:p_amount},
         { new: true }
       );
 
@@ -315,7 +317,7 @@ const completion_approval = async (req, res) => {
     } else {
       const task_completed = await Task.findOneAndUpdate(
         { _id: task._id },
-        { status: "completionApproval", isCompleted: true },
+        { status: "completionApproval", isCompleted: true,paid_amount:amount},
         { new: true }
       );
 

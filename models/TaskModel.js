@@ -66,6 +66,10 @@ const TaskSchema=new mongoose.Schema({
     ,lateSubmission:{
         type:Boolean,
         default:false,
+    },
+    paid_amount:{
+        type:Number,
+        default:0,
     }
 },{
     timestamps:true
